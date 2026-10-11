@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import type { Task, TaskStatus } from "@/types/contracts";
+import type { Task, TaskStatus, UpdateTaskRequest } from "@/types/contracts";
 import { Icon } from "@/components/dashboard/icon";
 
 const columns: { status: TaskStatus; title: string }[] = [
@@ -14,11 +14,12 @@ interface TaskBoardProps {
   busy: boolean;
   message: string;
   onCreate: (title: string, description: string, dueDate: string, dueTime: string) => Promise<boolean>;
+  onUpdate: (id: string, updates: UpdateTaskRequest) => Promise<boolean>;
   onStatus: (id: string, status: TaskStatus) => void;
   onDelete: (id: string) => void;
 }
 
-export function TaskBoard({ tasks, canEdit, busy, message, onCreate, onStatus, onDelete }: TaskBoardProps) {
+export function TaskBoard({ tasks, canEdit, busy, message, onCreate, onUpdate, onStatus, onDelete }: TaskBoardProps) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [dueDate, setDueDate] = useState("");
@@ -47,10 +48,62 @@ export function TaskBoard({ tasks, canEdit, busy, message, onCreate, onStatus, o
     <div className="task-columns">{columns.map(({ status, title: columnTitle }) => {
       const items = tasks.filter((task) => task.status === status);
       return <section key={status} className={`task-column ${status}`} aria-label={columnTitle}><h3><span className="status-dot" />{columnTitle}<span className="column-count">{items.length}</span></h3>
-        <div className="task-list">{items.length ? items.map((task) => <article className="task-card" key={task.id}><h4>{task.title}</h4>{task.description && <p>{task.description}</p>}{task.dueDate && <time className="task-due" dateTime={`${task.dueDate}${task.dueTime ? `T${task.dueTime}` : ""}`}>Due {formatDueDate(task.dueDate)}{task.dueTime ? ` at ${formatDueTime(task.dueTime)}` : ""}</time>}<div className="task-footer"><span className="task-avatar">WZ</span>{canEdit ? <span className="task-actions"><select value={task.status} disabled={busy} onChange={(event) => onStatus(task.id, event.target.value as TaskStatus)} aria-label={`Status for ${task.title}`}><option value="todo">To do</option><option value="in_progress">In progress</option><option value="done">Done</option></select><button type="button" disabled={busy} onClick={() => onDelete(task.id)} aria-label={`Delete ${task.title}`}>Delete</button></span> : <span>{status === "done" ? <><Icon name="check" size={13} />Complete</> : "Team task"}</span>}</div></article>) : <p className="empty-column">Nothing here yet.</p>}</div>
+        <div className="task-list">{items.length ? items.map((task) => <TaskCard key={task.id} task={task} canEdit={canEdit} busy={busy} onUpdate={onUpdate} onStatus={onStatus} onDelete={onDelete} />) : <p className="empty-column">Nothing here yet.</p>}</div>
       </section>;
     })}</div>
   </section>;
+}
+
+interface TaskCardProps {
+  task: Task;
+  canEdit: boolean;
+  busy: boolean;
+  onUpdate: (id: string, updates: UpdateTaskRequest) => Promise<boolean>;
+  onStatus: (id: string, status: TaskStatus) => void;
+  onDelete: (id: string) => void;
+}
+
+function TaskCard({ task, canEdit, busy, onUpdate, onStatus, onDelete }: TaskCardProps) {
+  const [editing, setEditing] = useState(false);
+  const [editTitle, setEditTitle] = useState(task.title);
+  const [editDescription, setEditDescription] = useState(task.description ?? "");
+  const [editDueDate, setEditDueDate] = useState(task.dueDate ?? "");
+  const [editDueTime, setEditDueTime] = useState(task.dueTime ?? "");
+
+  function cancelEdit() {
+    setEditTitle(task.title);
+    setEditDescription(task.description ?? "");
+    setEditDueDate(task.dueDate ?? "");
+    setEditDueTime(task.dueTime ?? "");
+    setEditing(false);
+  }
+
+  async function saveEdit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const saved = await onUpdate(task.id, {
+      title: editTitle,
+      description: editDescription,
+      dueDate: editDueDate || null,
+      dueTime: editDueDate && editDueTime ? editDueTime : null,
+    });
+    if (saved) setEditing(false);
+  }
+
+  if (editing) {
+    return <article className="task-card task-card-editing">
+      <form className="task-edit" onSubmit={saveEdit}>
+        <label>Title<input value={editTitle} onChange={(event) => setEditTitle(event.target.value)} maxLength={120} required autoFocus /></label>
+        <label>Details<textarea value={editDescription} onChange={(event) => setEditDescription(event.target.value)} maxLength={2000} rows={3} /></label>
+        <div className="task-edit-schedule">
+          <label>Due date<input type="date" value={editDueDate} onChange={(event) => { setEditDueDate(event.target.value); if (!event.target.value) setEditDueTime(""); }} /></label>
+          <label>Due time<input type="time" value={editDueTime} onChange={(event) => setEditDueTime(event.target.value)} disabled={!editDueDate} /></label>
+        </div>
+        <div className="task-edit-actions"><button type="submit" disabled={busy || !editTitle.trim()}>{busy ? "Saving…" : "Save"}</button><button type="button" disabled={busy} onClick={cancelEdit}>Cancel</button></div>
+      </form>
+    </article>;
+  }
+
+  return <article className="task-card"><h4>{task.title}</h4>{task.description && <p>{task.description}</p>}{task.dueDate && <time className="task-due" dateTime={`${task.dueDate}${task.dueTime ? `T${task.dueTime}` : ""}`}>Due {formatDueDate(task.dueDate)}{task.dueTime ? ` at ${formatDueTime(task.dueTime)}` : ""}</time>}<div className="task-footer"><span className="task-avatar">WZ</span>{canEdit ? <span className="task-actions"><select value={task.status} disabled={busy} onChange={(event) => onStatus(task.id, event.target.value as TaskStatus)} aria-label={`Status for ${task.title}`}><option value="todo">To do</option><option value="in_progress">In progress</option><option value="done">Done</option></select><button type="button" disabled={busy} onClick={() => setEditing(true)} aria-label={`Edit ${task.title}`}>Edit</button><button type="button" disabled={busy} onClick={() => onDelete(task.id)} aria-label={`Delete ${task.title}`}>Delete</button></span> : <span>{task.status === "done" ? <><Icon name="check" size={13} />Complete</> : "Team task"}</span>}</div></article>;
 }
 
 function formatDueDate(value: string) {

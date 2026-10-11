@@ -5,7 +5,7 @@ import Link from "next/link";
 import { WorkspaceAccess } from "@/components/auth/workspace-access";
 import { AIBuilderPanel } from "@/components/builder/ai-builder-panel";
 import { TaskBoard } from "@/components/tasks/task-board";
-import type { ApiResponse, GeneratedWidget, Task, TaskStatus, Widget } from "@/types/contracts";
+import type { ApiResponse, GeneratedWidget, Task, TaskStatus, UpdateTaskRequest, Widget } from "@/types/contracts";
 import { Icon } from "./icon";
 import { Calendar } from "./calendar";
 import { TodoList } from "@/components/tasks/todo-list";
@@ -97,16 +97,23 @@ export function Dashboard() {
       return false;
     } finally { setTaskBusy(false); }
   }
-  async function updateTaskStatus(id: string, status: TaskStatus) {
-    if (workspace.role !== "admin") return;
+  async function updateTask(id: string, updates: UpdateTaskRequest) {
+    if (workspace.role !== "admin") return false;
     setTaskBusy(true); setTaskMessage("");
     try {
-      const response = await fetch(`/api/tasks/${encodeURIComponent(id)}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, credentials: "same-origin", body: JSON.stringify({ status }) });
+      const response = await fetch(`/api/tasks/${encodeURIComponent(id)}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, credentials: "same-origin", body: JSON.stringify(updates) });
       const result = await response.json() as ApiResponse<{ task: Task }>;
       if (!response.ok || !result.data) throw new Error(result.error?.message ?? "Task could not be updated.");
       setTasks((current) => current.map((task) => task.id === id ? result.data!.task : task));
-    } catch (error) { setTaskMessage(error instanceof Error ? error.message : "Task could not be updated."); }
+      return true;
+    } catch (error) {
+      setTaskMessage(error instanceof Error ? error.message : "Task could not be updated.");
+      return false;
+    }
     finally { setTaskBusy(false); }
+  }
+  async function updateTaskStatus(id: string, status: TaskStatus) {
+    await updateTask(id, { status });
   }
   async function deleteTask(id: string) {
     if (workspace.role !== "admin") return;
@@ -146,7 +153,7 @@ export function Dashboard() {
       {activeWidget ? <section className="tool-pane" aria-label={activeWidget.title}>
         {workspace.role === "admin" && <ToolManageBar widget={activeWidget} onDelete={removeWidget} onDeleted={() => setActiveTool(null)} />}
         <WidgetRenderer key={`${workspace.id}:${activeWidget.id}`} widgetId={activeWidget.id} workspaceId={workspace.id} html={activeWidget.html} theme={theme} title={activeWidget.title} className="tool-pane-frame" />
-      </section> : <div className="dashboard-grid"><div className="workspace-content"><div className="overview-grid"><Calendar tasks={tasks} selectedDueDate={selectedDueDate} onSelectDueDate={setSelectedDueDate} /><TodoList tasks={tasks} canEdit={workspace.role === "admin" && !taskBusy} selectedDueDate={selectedDueDate} onClearDate={() => setSelectedDueDate(null)} onToggle={toggleTask} /></div><TaskBoard tasks={tasks} canEdit={workspace.role === "admin"} busy={taskBusy} message={taskMessage} onCreate={createTask} onStatus={(id, status) => void updateTaskStatus(id, status)} onDelete={(id) => void deleteTask(id)} />
+      </section> : <div className="dashboard-grid"><div className="workspace-content"><div className="overview-grid"><Calendar tasks={tasks} selectedDueDate={selectedDueDate} onSelectDueDate={setSelectedDueDate} /><TodoList tasks={tasks} canEdit={workspace.role === "admin" && !taskBusy} selectedDueDate={selectedDueDate} onClearDate={() => setSelectedDueDate(null)} onToggle={toggleTask} /></div><TaskBoard tasks={tasks} canEdit={workspace.role === "admin"} busy={taskBusy} message={taskMessage} onCreate={createTask} onUpdate={updateTask} onStatus={(id, status) => void updateTaskStatus(id, status)} onDelete={(id) => void deleteTask(id)} />
       </div>{workspace.role === "admin" && <AIBuilderPanel isAdmin expanded={builderOpen} onToggle={() => setBuilderOpen((current) => !current)} workspaceId={workspace.id} theme={theme} preview={preview} onGenerate={generate} onSave={save} onDiscard={() => setPreview(null)} />}</div>}
       <footer className="dashboard-footer"><span>WorkspaceZero · Small software. Shared workspace.</span><span>AI tools, shared with your team</span></footer>
     </main>
