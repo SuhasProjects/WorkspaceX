@@ -375,6 +375,17 @@ body { font-family: var(--wz-font-body); }
 .tool-directory a:hover { border-color: var(--wz-border); }
 
 .access-shell { position: relative; isolation: isolate; overflow: clip; min-height: 100vh; display: grid; place-items: center; padding: 24px; background: var(--wz-background); }
+.workspace-reveal { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; overflow: hidden; color: #edf0f5; background: radial-gradient(ellipse at center, #202634 0%, #11141b 58%, #0d1016 100%); pointer-events: none; animation: workspace-reveal-dismiss 3.3s ease both; }
+.workspace-reveal-squares { position: absolute; inset: 0; display: grid; place-items: center; perspective: 900px; }
+.workspace-reveal-square { position: absolute; width: var(--square-size); aspect-ratio: 1; border: 1px solid rgba(182, 200, 240, .42); box-shadow: 0 0 22px rgba(145, 174, 230, .08), inset 0 0 22px rgba(145, 174, 230, .04); opacity: 0; animation: workspace-square-collapse var(--square-duration) cubic-bezier(.72, 0, .22, 1) var(--square-delay) both; }
+.workspace-reveal-wordmark { position: relative; z-index: 1; display: flex; align-items: baseline; gap: 0; color: #f1f4fb; font-family: var(--wz-font-display); font-size: clamp(38px, 7vw, 82px); font-weight: 350; letter-spacing: -.065em; opacity: 0; filter: blur(12px); transform: scale(.78); text-shadow: 0 0 36px rgba(182, 200, 240, .25); animation: workspace-wordmark-emerge .78s cubic-bezier(.16, 1, .3, 1) 1.55s both; }
+.workspace-reveal-zero { color: #b6c8f0; font-weight: 450; }
+@keyframes workspace-square-collapse { 0% { opacity: 0; transform: scale(1) rotate(0deg); } 12% { opacity: .62; } 100% { opacity: 0; transform: scale(.035) rotate(48deg); } }
+@keyframes workspace-wordmark-emerge { 0% { opacity: 0; filter: blur(12px); transform: scale(.78); } 100% { opacity: 1; filter: blur(0); transform: scale(1); } }
+@keyframes workspace-reveal-dismiss { 0%, 76% { opacity: 1; visibility: visible; } 100% { opacity: 0; visibility: hidden; } }
+.workspace-reveal-wordmark span { color: inherit; }
+.workspace-reveal-wordmark .workspace-reveal-zero { color: #b6c8f0; }
+@media (prefers-reduced-motion: reduce) { .workspace-reveal { animation: none !important; } .workspace-reveal-squares { display: none; } .workspace-reveal-wordmark { opacity: 1; filter: none; transform: none; animation: none !important; } }
 .access-card { width: min(100%, 440px); padding: 34px; border: 1px solid var(--wz-border); border-radius: 3px; background: var(--glass); box-shadow: var(--glass-shadow); backdrop-filter: blur(24px); }
 .access-card h1 { margin: 8px 0; font-family: var(--wz-font-display); font-size: 32px; font-weight: 300; letter-spacing: -.8px; }
 .access-card > p:not(.eyebrow) { color: var(--wz-muted); font-size: 13px; }

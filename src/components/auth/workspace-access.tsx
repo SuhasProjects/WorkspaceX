@@ -3,10 +3,11 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
 import { Atmosphere } from "@/components/dashboard/atmosphere";
+import { prepareWorkspaceRevealSound, type WorkspaceRevealSound } from "./workspace-reveal";
 
 type Mode = "login" | "create";
 
-export function WorkspaceAccess({ onSuccess }: { onSuccess: () => void }) {
+export function WorkspaceAccess({ onSuccess }: { onSuccess: (sound: WorkspaceRevealSound | null) => void }) {
   const [mode, setMode] = useState<Mode>("login");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -14,6 +15,7 @@ export function WorkspaceAccess({ onSuccess }: { onSuccess: () => void }) {
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setBusy(true); setError("");
+    const revealSound = mode === "login" ? prepareWorkspaceRevealSound() : null;
     const data = new FormData(event.currentTarget);
     const body = mode === "login"
       ? { workspaceId: String(data.get("workspaceId") ?? "").trim().toLowerCase(), password: data.get("password") }
@@ -32,8 +34,9 @@ export function WorkspaceAccess({ onSuccess }: { onSuccess: () => void }) {
       });
       const result = await response.json();
       if (!response.ok) throw new Error(result?.error?.message ?? "Workspace access failed.");
-      onSuccess();
+      onSuccess(revealSound);
     } catch (cause) {
+      revealSound?.cancel();
       setError(cause instanceof Error ? cause.message : "Workspace access failed.");
     } finally { setBusy(false); }
   }

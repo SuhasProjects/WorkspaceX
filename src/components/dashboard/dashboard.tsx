@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { WorkspaceAccess } from "@/components/auth/workspace-access";
+import { WorkspaceReveal, type WorkspaceRevealSound } from "@/components/auth/workspace-reveal";
 import { AIBuilderPanel } from "@/components/builder/ai-builder-panel";
 import { TaskBoard } from "@/components/tasks/task-board";
 import type { ApiResponse, GeneratedWidget, Task, TaskStatus, UpdateTaskRequest, Widget, WidgetSize } from "@/types/contracts";
@@ -42,6 +43,8 @@ export function Dashboard() {
   const [selectedDueDate, setSelectedDueDate] = useState<string | null>(null);
   const [preview, setPreview] = useState<GeneratedWidget | null>(null);
   const [builderOpen, setBuilderOpen] = useState(false);
+  const [showLoginReveal, setShowLoginReveal] = useState(false);
+  const loginRevealSound = useRef<WorkspaceRevealSound | null>(null);
   const theme = useWidgetTheme();
   const { state, retry, reorderWidget, removeWidget, duplicateWidget, updateWidget, updateWidgetSize, updateWidgetSpan } = useWorkspaceWidgets();
   const [editingTool, setEditingTool] = useState<string | null>(null);
@@ -50,6 +53,27 @@ export function Dashboard() {
   const [dropTarget, setDropTarget] = useState<string | null>(null);
   const workspaceId = state.status === "ready" ? state.workspace.id : null;
   const activeTool = useActiveTool();
+
+  const handleAccessSuccess = useCallback((sound: WorkspaceRevealSound | null) => {
+    if (sound) {
+      loginRevealSound.current = sound;
+      setShowLoginReveal(true);
+    }
+    retry();
+  }, [retry]);
+  const playLoginRevealSound = useCallback(() => {
+    const sound = loginRevealSound.current;
+    loginRevealSound.current = null;
+    sound?.play();
+  }, []);
+  const finishLoginReveal = useCallback(() => {
+    loginRevealSound.current?.cancel();
+    loginRevealSound.current = null;
+    setShowLoginReveal(false);
+  }, []);
+  const revealOverlay = showLoginReveal
+    ? <WorkspaceReveal sound={loginRevealSound.current} onComplete={finishLoginReveal} />
+    : null;
 
   useEffect(() => {
     if (!workspaceId) return;
@@ -67,9 +91,9 @@ export function Dashboard() {
     return () => controller.abort();
   }, [workspaceId]);
 
-  if (state.status === "loading") return <main className="page-state min-h-screen" role="status"><span className="spinner" /><p>Opening your workspace…</p></main>;
-  if (state.status === "signed_out") return <WorkspaceAccess onSuccess={retry} />;
-  if (state.status === "error") return <main className="page-state min-h-screen" role="alert"><h1>Unable to open workspace</h1><p>{state.message}</p><button type="button" onClick={retry}>Try again</button></main>;
+  if (state.status === "loading") return <>{revealOverlay}<main className="page-state min-h-screen" role="status"><span className="spinner" /><p>Opening your workspace…</p></main></>;
+  if (state.status === "signed_out") return <>{revealOverlay}<WorkspaceAccess onSuccess={handleAccessSuccess} /></>;
+  if (state.status === "error") return <>{revealOverlay}<main className="page-state min-h-screen" role="alert"><h1>Unable to open workspace</h1><p>{state.message}</p><button type="button" onClick={retry}>Try again</button></main></>;
 
   const { workspace, widgets } = state;
   const compactWidgets = widgets.filter((widget) => widget.size !== "large");
@@ -149,7 +173,7 @@ export function Dashboard() {
     return updateWidgetSize(id, size);
   }
 
-  return <div className="dashboard-shell" data-theme={theme}><Atmosphere /><a className="skip-link" href="#main">Skip to workspace</a><WorkspaceHeader workspace={workspace} theme={theme} onTheme={toggleTheme} onLogout={logout} />
+  return <>{revealOverlay}<div className="dashboard-shell" data-theme={theme}><Atmosphere /><a className="skip-link" href="#main">Skip to workspace</a><WorkspaceHeader workspace={workspace} theme={theme} onTheme={toggleTheme} onLogout={logout} />
     <main id="main" className="dashboard-main dashboard-home" aria-label={workspace.name}>
       <section className="workspace-tabs" aria-label="Workspace pages">
         <nav className="workspace-tab-list">
@@ -179,5 +203,5 @@ export function Dashboard() {
       </div>{workspace.role === "admin" && <AIBuilderPanel isAdmin usage={{ count: widgets.length, limit: widgetLimitFor(workspace.plan), plan: workspace.plan }} referenceOptions={widgets.map(({ id, title }) => ({ id, title }))} expanded={builderOpen} onToggle={() => setBuilderOpen((current) => !current)} workspaceId={workspace.id} theme={theme} preview={preview} onGenerate={generate} onSave={save} onDiscard={() => setPreview(null)} />}</div>}
       <footer className="dashboard-footer"><span>WorkspaceZero · Small software. Shared workspace.</span><span>AI tools, shared with your team</span></footer>
     </main>
-  </div>;
+  </div></>;
 }
