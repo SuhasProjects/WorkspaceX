@@ -1,6 +1,6 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
-import { MongoServerError } from "mongodb";
+import { MongoServerError, type UpdateFilter } from "mongodb";
 import type { GeneratedWidget, JsonValue, Task, TaskStatus, UpdateTaskRequest, Widget, WidgetSize, WidgetSpan } from "@/types/contracts";
 import { DatabaseError, getDatabase } from "./client";
 
@@ -258,8 +258,8 @@ export async function updateWidgetLayout(
   if (Object.keys(changes).length === 0) throw new DatabaseError("INVALID_INPUT", "Provide a size or span.");
   const db = await getDatabase();
   // Choosing a preset discards any drag-resized footprint so the preset takes effect.
-  const update = input.size !== undefined && input.span === undefined
-    ? { $set: changes, $unset: { span: "" } }
+  const update: UpdateFilter<WidgetRecord> = input.size !== undefined && input.span === undefined
+    ? { $set: changes, $unset: { span: true } }
     : { $set: changes };
   const record = await db.collection<WidgetRecord>("widgets").findOneAndUpdate(
     { _id: widgetId, workspaceId }, update, { returnDocument: "after" },
