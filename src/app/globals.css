@@ -582,3 +582,8 @@ body { font-family: var(--wz-font-body); }
 .members-invite input, .members-invite select { padding: 8px 10px; background: var(--inset); border: 1px solid var(--wz-border); border-radius: 3px; color: var(--wz-text); font: inherit; font-size: 13px; }
 .members-invite input { flex: 1; min-width: 160px; }
 @media (max-width: 600px) { .account-menu-summary { display: none; } }
+/* Browser autofill paints its own background on remembered fields; keep every access input identical. */
+.access-form input:-webkit-autofill, .access-form input:-webkit-autofill:hover, .access-form input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px var(--wz-surface) inset; -webkit-text-fill-color: var(--wz-text); caret-color: var(--wz-text); transition: background-color 9999s ease-out;
+}
+.access-form input:autofill { box-shadow: 0 0 0 1000px var(--wz-surface) inset; }
