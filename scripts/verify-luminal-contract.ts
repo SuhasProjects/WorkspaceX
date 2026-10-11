@@ -6,6 +6,7 @@ async function main() {
   process.env.LUMINAL_MODEL = "local-test-model";
   const { generateWidget } = await import("../src/lib/luminal/generate");
   const { buildGenerationMessages } = await import("../src/lib/widget-protocol/generation-contract");
+  const { THEME_TOKENS, TOKEN_NAMES } = await import("../src/lib/widget-protocol/theme");
   const sent: Record<string, unknown>[] = [];
   globalThis.fetch = async (_input, init) => {
     sent.push(JSON.parse(String(init?.body)) as Record<string, unknown>);
@@ -27,6 +28,12 @@ async function main() {
   assert.deepEqual(sent[0]?.messages, buildGenerationMessages({ prompt: "Create a shared poll" }));
   assert.equal(sent[0]?.model, "local-test-model");
   assert.equal(sent[0]?.temperature, 0.2);
+  assert.equal(TOKEN_NAMES.length, 25);
+  for (const name of ["--wz-blue", "--wz-cyan", "--wz-teal", "--wz-yellow", "--wz-orange", "--wz-red", "--wz-purple", "--wz-pink"]) {
+    assert.ok(THEME_TOKENS.light[name], `Missing light token ${name}`);
+    assert.ok(THEME_TOKENS.dark[name], `Missing dark token ${name}`);
+  }
+  assert.match(JSON.stringify(sent[0]?.messages), /--wz-purple/);
   await generateWidget("Make the vote button blue", widget.html);
   assert.deepEqual(sent[1]?.messages, buildGenerationMessages({ prompt: "Make the vote button blue", baseHtml: widget.html }));
   assert.equal(sent[1]?.temperature, 0.2);

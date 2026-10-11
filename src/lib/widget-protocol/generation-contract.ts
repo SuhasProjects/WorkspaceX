@@ -50,7 +50,11 @@ The host is a dark-first, minimal workspace: thin display-font headings, small u
 - Messages:      <p class="wz-status" id="status"></p>  (add class "error" for failures)
 - Text helpers:  class="wz-muted" (secondary text), class="wz-small" (12px)
 Rules:
-- Colors: ONLY these variables, never hard-coded colors or gradients: --wz-background, --wz-surface, --wz-inset (input/stat backgrounds), --wz-hover, --wz-text, --wz-muted, --wz-border, --wz-accent, --wz-accent-text, --wz-danger, --wz-success.
+- Colors: ONLY use the WorkspaceZero palette below, never hard-coded colors or gradients. Every variable has coordinated light and dark values and updates automatically with the host theme.
+  - Structure: --wz-background, --wz-surface, --wz-inset, --wz-hover, --wz-glass, --wz-text, --wz-muted, --wz-border.
+  - Actions/status: --wz-accent, --wz-accent-text, --wz-success, --wz-danger.
+  - Charts/categories: --wz-blue, --wz-cyan, --wz-teal, --wz-yellow, --wz-orange, --wz-red, --wz-purple, --wz-pink.
+- Prefer the semantic action/status colors for controls and messages. Sample the chart/category colors in the listed order when multiple distinct series are needed. Do not redefine any --wz-* variable inside the widget.
 - Fonts: never set font-family; body and headings are already correct. Headings h1/h2/h3 are pre-styled; do not change their weight.
 - Corners: var(--wz-radius) everywhere. Borders: 1px solid var(--wz-border). No box-shadow, no gradients, no emojis, no icon fonts, no background images. Small inline SVG icons are fine.
 - Fill the full page width. Do not wrap the widget in a centered max-width card. Do not set a page background or body padding.
