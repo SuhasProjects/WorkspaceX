@@ -6,9 +6,8 @@ import { useRouter } from "next/navigation";
 import { WorkspaceAccess } from "@/components/auth/workspace-access";
 import { AIBuilderPanel } from "@/components/builder/ai-builder-panel";
 import { TaskBoard } from "@/components/tasks/task-board";
-import type { ApiResponse, GeneratedWidget, Theme, Widget } from "@/types/contracts";
+import type { ApiResponse, GeneratedWidget, Task, TaskStatus, Theme, Widget } from "@/types/contracts";
 import { Icon } from "./icon";
-import { mockTasks } from "./mock-data";
 import { Calendar } from "./calendar";
 import { TodoList } from "@/components/tasks/todo-list";
 import { WorkspaceHeader } from "./workspace-header";
@@ -29,16 +28,38 @@ async function post<T>(url: string, body?: unknown): Promise<T> {
 }
 
 export function Dashboard() {
-  const [tasks, setTasks] = useState(mockTasks);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [taskBusy, setTaskBusy] = useState(false);
+  const [taskMessage, setTaskMessage] = useState("");
   const [preview, setPreview] = useState<GeneratedWidget | null>(null);
   const [theme, setTheme] = useState<Theme>("light");
   const router = useRouter();
   const { state, retry } = useWorkspaceWidgets();
+  const workspaceId = state.status === "ready" ? state.workspace.id : null;
 
   useEffect(() => {
-    try { setTheme(localStorage.getItem("workspacezero.theme") === "dark" ? "dark" : "light"); }
-    catch { /* Keep the default when browser storage is unavailable. */ }
+    const timer = window.setTimeout(() => {
+      try { setTheme(localStorage.getItem("workspacezero.theme") === "dark" ? "dark" : "light"); }
+      catch { /* Keep the default when browser storage is unavailable. */ }
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, []);
+
+  useEffect(() => {
+    if (!workspaceId) return;
+    const controller = new AbortController();
+    fetch("/api/tasks", { signal: controller.signal, cache: "no-store", credentials: "same-origin" })
+      .then(async (response) => {
+        const result = await response.json() as ApiResponse<{ tasks: Task[] }>;
+        if (!response.ok || !result.data) throw new Error(result.error?.message ?? "Tasks could not be loaded.");
+        return result.data.tasks;
+      })
+      .then((loaded) => { if (!controller.signal.aborted) setTasks(loaded); })
+      .catch((error: unknown) => {
+        if (!controller.signal.aborted) setTaskMessage(error instanceof Error ? error.message : "Tasks could not be loaded.");
+      });
+    return () => controller.abort();
+  }, [workspaceId]);
 
   if (state.status === "loading") return <main className="page-state min-h-screen" role="status"><span className="spinner" /><p>Opening your workspace…</p></main>;
   if (state.status === "signed_out") return <WorkspaceAccess onSuccess={retry} />;
@@ -67,14 +88,48 @@ export function Dashboard() {
     try { localStorage.setItem("workspacezero.theme", next); } catch {}
     window.dispatchEvent(new Event("workspacezero:theme"));
   }
-  function toggleTask(id: string) {
+  async function createTask(title: string, description: string) {
+    if (workspace.role !== "admin") return false;
+    setTaskBusy(true); setTaskMessage("");
+    try {
+      const data = await post<{ task: Task }>("/api/tasks", { title, ...(description ? { description } : {}) });
+      setTasks((current) => [...current, data.task]);
+      return true;
+    } catch (error) {
+      setTaskMessage(error instanceof Error ? error.message : "Task could not be created.");
+      return false;
+    } finally { setTaskBusy(false); }
+  }
+  async function updateTaskStatus(id: string, status: TaskStatus) {
     if (workspace.role !== "admin") return;
-    setTasks((current) => current.map((task) => task.id === id ? { ...task, status: task.status === "done" ? "todo" : "done" } : task));
+    setTaskBusy(true); setTaskMessage("");
+    try {
+      const response = await fetch(`/api/tasks/${encodeURIComponent(id)}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, credentials: "same-origin", body: JSON.stringify({ status }) });
+      const result = await response.json() as ApiResponse<{ task: Task }>;
+      if (!response.ok || !result.data) throw new Error(result.error?.message ?? "Task could not be updated.");
+      setTasks((current) => current.map((task) => task.id === id ? result.data!.task : task));
+    } catch (error) { setTaskMessage(error instanceof Error ? error.message : "Task could not be updated."); }
+    finally { setTaskBusy(false); }
+  }
+  async function deleteTask(id: string) {
+    if (workspace.role !== "admin") return;
+    setTaskBusy(true); setTaskMessage("");
+    try {
+      const response = await fetch(`/api/tasks/${encodeURIComponent(id)}`, { method: "DELETE", credentials: "same-origin" });
+      const result = await response.json() as ApiResponse<{ success: true }>;
+      if (!response.ok || !result.data) throw new Error(result.error?.message ?? "Task could not be deleted.");
+      setTasks((current) => current.filter((task) => task.id !== id));
+    } catch (error) { setTaskMessage(error instanceof Error ? error.message : "Task could not be deleted."); }
+    finally { setTaskBusy(false); }
+  }
+  function toggleTask(id: string) {
+    const task = tasks.find((item) => item.id === id);
+    if (task) void updateTaskStatus(id, task.status === "done" ? "todo" : "done");
   }
 
   return <div className="dashboard-shell" data-theme={theme}><a className="skip-link" href="#main">Skip to workspace</a><WorkspaceHeader workspace={workspace} theme={theme} onTheme={toggleTheme} onLogout={logout} />
     <main id="main" className="dashboard-main"><div className="workspace-intro"><div><p className="eyebrow"><span className="live-dot" />YOUR SHARED SPACE</p><h1>Less setup. More doing.</h1><p>Keep your team&apos;s tasks and little tools in one happy place.</p></div><div className="intro-tag"><Icon name="people" size={17} /><span>Small team. Big possibilities.</span></div></div>
-      <div className="dashboard-grid"><div className="workspace-content"><div className="overview-grid"><Calendar /><TodoList tasks={tasks} canEdit={workspace.role === "admin"} onToggle={toggleTask} /></div><TaskBoard tasks={tasks} />
+      <div className="dashboard-grid"><div className="workspace-content"><div className="overview-grid"><Calendar /><TodoList tasks={tasks} canEdit={workspace.role === "admin" && !taskBusy} onToggle={toggleTask} /></div><TaskBoard tasks={tasks} canEdit={workspace.role === "admin"} busy={taskBusy} message={taskMessage} onCreate={createTask} onStatus={(id, status) => void updateTaskStatus(id, status)} onDelete={(id) => void deleteTask(id)} />
         <section className="section-block tools-section" aria-labelledby="tools-heading"><div className="section-heading"><div><h2 id="tools-heading">Team tools <span className="count-badge">{widgets.length}</span></h2><p>Small software, made for the way you work.</p></div>{workspace.role === "admin" && <a href="#tool-prompt" className="text-link"><Icon name="plus" size={15} />Create a tool</a>}</div>
           {widgets.length ? <nav className="tool-directory" aria-label="Open a team tool">{widgets.map((widget) => <Link key={widget.id} href={`/widgets/${encodeURIComponent(widget.id)}`}><Icon name="grid" size={17} /><span>{widget.title}</span><small>Open tool</small><Icon name="arrow" size={15} /></Link>)}</nav> : <div className="empty-tools"><Icon name="sparkle" size={30} /><h3>Your next idea starts here.</h3><p>Describe a tool in the builder to give it a page of its own.</p></div>}
         </section>

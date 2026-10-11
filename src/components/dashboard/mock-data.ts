@@ -1,14 +1,8 @@
-import type { Task, Widget, Workspace } from "@/types/contracts";
+import type { Widget, Workspace } from "@/types/contracts";
 
 // Removable Phase 1 fixtures; no authentication or persistence is simulated.
 export const mockWorkspace: Workspace = { id: "launch-team", name: "Launch team", role: "admin" };
 const timestamp = "2026-10-11T16:00:00.000Z";
-export const mockTasks: Task[] = [
-  { id: "task-1", title: "Choose our next team tool", description: "A small idea with a big impact.", status: "todo", createdAt: timestamp, updatedAt: timestamp },
-  { id: "task-2", title: "Outline the product demo", description: "Tell our story in 90 seconds.", status: "todo", createdAt: timestamp, updatedAt: timestamp },
-  { id: "task-3", title: "Build the shared workspace", description: "Bring tasks and tools together.", status: "in_progress", createdAt: timestamp, updatedAt: timestamp },
-  { id: "task-4", title: "Agree on team interfaces", description: "One foundation. Three teammates.", status: "done", createdAt: timestamp, updatedAt: timestamp },
-];
 export const mockWidgets: Widget[] = [
   { id: "sample-poll", title: "What should we build next?", html: "", createdAt: timestamp },
   { id: "sample-calculator", title: "Meeting cost calculator", html: "", createdAt: timestamp },

@@ -71,6 +71,7 @@ export async function getDatabase(): Promise<Db> {
   if (!state.indexes.has(name)) {
     const indexes = Promise.all([
       db.collection("widgets").createIndex({ workspaceId: 1, createdAt: 1, _id: 1 }),
+      db.collection("tasks").createIndex({ workspaceId: 1, createdAt: 1, _id: 1 }),
       db.collection("widgetData").createIndex({ workspaceId: 1, widgetId: 1, key: 1 }, { unique: true }),
     ]).then(() => undefined).catch(() => {
       state.indexes.delete(name);
