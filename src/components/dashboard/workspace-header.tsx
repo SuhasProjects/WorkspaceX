@@ -2,7 +2,6 @@
 
 import type { Workspace } from "@/types/contracts";
 import { Icon } from "./icon";
-import { setWidgetTheme, useWidgetTheme } from "./use-workspace-widgets";
 
 export function WorkspaceHeader({ workspace, theme, onTheme, onLogout }: {
   workspace: Workspace;

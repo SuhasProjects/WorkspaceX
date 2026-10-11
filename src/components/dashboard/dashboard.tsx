@@ -7,7 +7,6 @@ import { WorkspaceAccess } from "@/components/auth/workspace-access";
 import { AIBuilderPanel } from "@/components/builder/ai-builder-panel";
 import { TaskBoard } from "@/components/tasks/task-board";
 import type { ApiResponse, GeneratedWidget, Task, TaskStatus, Widget } from "@/types/contracts";
-import { Icon } from "./icon";
 import { Calendar } from "./calendar";
 import { TodoList } from "@/components/tasks/todo-list";
 import { WorkspaceHeader } from "./workspace-header";
@@ -118,10 +117,10 @@ export function Dashboard() {
   }
 
   return <div className="dashboard-shell" data-theme={theme}><Atmosphere /><a className="skip-link" href="#main">Skip to workspace</a><WorkspaceHeader workspace={workspace} theme={theme} onTheme={toggleTheme} onLogout={logout} />
-    <main id="main" className="dashboard-main"><div className="workspace-intro"><div><p className="eyebrow"><span className="live-dot" />YOUR SHARED SPACE</p><h1>Less setup. More doing.</h1><p>Keep your team&apos;s tasks and little tools in one happy place.</p></div><div className="intro-tag"><Icon name="people" size={17} /><span>Small team. Big possibilities.</span></div></div>
+    <main id="main" className="dashboard-main"><div className="workspace-intro"><div><h1>Workspace</h1></div></div>
       <div className="dashboard-grid"><div className="workspace-content"><div className="overview-grid"><Calendar /><TodoList tasks={tasks} canEdit={workspace.role === "admin" && !taskBusy} onToggle={toggleTask} /></div><TaskBoard tasks={tasks} canEdit={workspace.role === "admin"} busy={taskBusy} message={taskMessage} onCreate={createTask} onStatus={(id, status) => void updateTaskStatus(id, status)} onDelete={(id) => void deleteTask(id)} />
-        <section className="section-block tools-section" aria-labelledby="tools-heading"><div className="section-heading"><div><h2 id="tools-heading">Team tools <span className="count-badge">{widgets.length}</span></h2><p>Small software, made for the way you work.</p></div>{workspace.role === "admin" && <a href="#tool-prompt" className="text-link"><Icon name="plus" size={15} />Create a tool</a>}</div>
-          {widgets.length ? <nav className="tool-directory" aria-label="Open a team tool">{widgets.map((widget) => <Link key={widget.id} href={`/widgets/${encodeURIComponent(widget.id)}`}><Icon name="grid" size={17} /><span>{widget.title}</span><small>Open tool</small><Icon name="arrow" size={15} /></Link>)}</nav> : <div className="empty-tools"><Icon name="sparkle" size={30} /><h3>Your next idea starts here.</h3><p>Describe a tool in the builder to give it a page of its own.</p></div>}
+        <section className="section-block tools-section" aria-labelledby="tools-heading"><div className="section-heading"><div><h2 id="tools-heading">Team tools <span className="count-badge">{widgets.length}</span></h2><p>Open a tool on its own page.</p></div>{workspace.role === "admin" && <a href="#tool-prompt" className="text-link">Create a tool</a>}</div>
+          {widgets.length ? <nav className="tool-directory" aria-label="Open a team tool">{widgets.map((widget, index) => <Link key={widget.id} href={`/widgets/${encodeURIComponent(widget.id)}`}><span className="tool-index" aria-hidden="true">{String(index + 1).padStart(2, "0")}</span><span className="tool-title">{widget.title}</span><small>Open tool</small></Link>)}</nav> : <div className="empty-tools"><h3>No tools yet</h3><p>Use the builder above to create your first tool.</p></div>}
         </section>
       </div><AIBuilderPanel isAdmin={workspace.role === "admin"} workspaceId={workspace.id} theme={theme} preview={preview} onGenerate={generate} onSave={save} onDiscard={() => setPreview(null)} /></div>
       <footer className="dashboard-footer"><span>WorkspaceZero · Small software. Shared workspace.</span><span>AI tools, shared with your team</span></footer>

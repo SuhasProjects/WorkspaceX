@@ -17,7 +17,7 @@ export function Calendar() {
   const days = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate();
   function move(amount: number) { setMonth(new Date(month.getFullYear(), month.getMonth() + amount, 1)); }
 
-  return <section className="overview-card" aria-labelledby="calendar-heading">
+  return <section className="overview-card calendar-panel" aria-labelledby="calendar-heading">
     <div className="section-heading"><div><h2 id="calendar-heading">Calendar</h2><p>{label}</p></div><div className="calendar-controls"><button onClick={() => move(-1)} aria-label="Previous month">←</button><button onClick={() => move(1)} aria-label="Next month">→</button></div></div>
     <div className="calendar-grid">{["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => <span className="calendar-weekday" key={day}>{day}</span>)}
       {Array.from({ length: offset }, (_, index) => <span key={`blank-${index}`} />)}

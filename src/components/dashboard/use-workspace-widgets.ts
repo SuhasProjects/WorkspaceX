@@ -50,7 +50,10 @@ export function useWorkspaceWidgets(preview = false) {
   }, [revision, preview]);
   function retry() { setState({ status: "loading" }); setRevision((value) => value + 1); }
   const resolvedState: WorkspaceState = preview ? { status: "ready", workspace: mockWorkspace, widgets: previewWidgets } : state;
-  return { state: resolvedState, retry };
+  function replaceWidget(widget: Widget) {
+    setState((current) => current.status === "ready" ? { ...current, widgets: current.widgets.map((item) => item.id === widget.id ? widget : item) } : current);
+  }
+  return { state: resolvedState, retry, replaceWidget };
 }
 
 function previewSnapshot(): string | null {
