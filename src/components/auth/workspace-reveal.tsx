@@ -75,7 +75,27 @@ export function prepareWorkspaceRevealSound(): WorkspaceRevealSound {
             oscillator.stop(now + 1.65);
           });
 
-          window.setTimeout(cancel, 2100);
+          [
+            { start: 0.12, frequency: 880, level: 0.027 },
+            { start: 0.2, frequency: 1174.66, level: 0.021 },
+            { start: 0.29, frequency: 1760, level: 0.014 },
+          ].forEach(({ start, frequency, level }) => {
+            const oscillator = context.createOscillator();
+            const envelope = context.createGain();
+            const beginning = now + start;
+            oscillator.type = "sine";
+            oscillator.frequency.setValueAtTime(frequency, beginning);
+            oscillator.frequency.exponentialRampToValueAtTime(frequency * 0.997, beginning + 0.9);
+            envelope.gain.setValueAtTime(0.0001, beginning);
+            envelope.gain.exponentialRampToValueAtTime(level, beginning + 0.035);
+            envelope.gain.exponentialRampToValueAtTime(0.0001, beginning + 1.05);
+            oscillator.connect(envelope);
+            envelope.connect(warmth);
+            oscillator.start(beginning);
+            oscillator.stop(beginning + 1.1);
+          });
+
+          window.setTimeout(cancel, 2300);
         }).catch(() => undefined);
       },
       cancel,
