@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { MongoServerError } from "mongodb";
 import { DatabaseError, getDatabase } from "./client";
 import { effectivePlan, usageMonth } from "@/lib/billing/plans";
+import { demoPlanFor } from "@/lib/billing/demo-plans";
 import type {
   Account, InvitationRole, InvitationStatus, Membership, Plan, Subscription, SubscriptionStatus,
   WorkspaceInvitation, WorkspaceRole, WorkspaceSummary,
@@ -88,11 +89,12 @@ function publicSubscription(record: Pick<UserRecord, "subscription">): Subscript
 
 export function publicAccount(record: UserRecord): Account {
   const subscription = publicSubscription(record);
-  return { id: record._id, username: record.username, plan: effectivePlan(subscription), subscription };
+  return { id: record._id, username: record.username, plan: demoPlanFor(record.usernameNormalized) ?? effectivePlan(subscription), subscription };
 }
 
-export function userPlan(record: Pick<UserRecord, "subscription"> | null | undefined): Plan {
-  return record ? effectivePlan(publicSubscription(record)) : "free";
+export function userPlan(record: Pick<UserRecord, "subscription" | "usernameNormalized"> | null | undefined): Plan {
+  if (!record) return "free";
+  return demoPlanFor(record.usernameNormalized) ?? effectivePlan(publicSubscription(record));
 }
 
 // ---------------------------------------------------------------------------
@@ -222,7 +224,7 @@ export async function listWorkspacesForUser(userId: string): Promise<WorkspaceSu
   if (!memberships.length) return [];
   const records = await db.collection<WorkspaceRecord>("workspaces").find({ _id: { $in: memberships.map((m) => m.workspaceId) } }).toArray();
   const ownerIds = Array.from(new Set(records.map((r) => r.ownerUserId)));
-  const owners = await db.collection<UserRecord>("users").find({ _id: { $in: ownerIds } }, { projection: { subscription: 1 } }).toArray();
+  const owners = await db.collection<UserRecord>("users").find({ _id: { $in: ownerIds } }, { projection: { subscription: 1, usernameNormalized: 1 } }).toArray();
   const ownerById = new Map(owners.map((o) => [o._id, o]));
   const byId = new Map(records.map((r) => [r._id, r]));
   const result: WorkspaceSummary[] = [];
