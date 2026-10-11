@@ -158,7 +158,9 @@ svg { flex-shrink: 0; }
 .todo-items { display: grid; gap: 17px; }
 .todo-item { display: flex; align-items: flex-start; gap: 11px; font-size: 13px; }
 .todo-item input { accent-color: #849bc7; margin-top: 5px; width: 15px; height: 15px; flex-shrink: 0; }
+.todo-item-copy { display: grid; gap: 2px; }
 .todo-complete span { color: var(--wz-muted); text-decoration: line-through; }
+.todo-complete .task-due { text-decoration: none; }
 .sample-caption { font-size: 10px; color: var(--wz-muted); margin-top: 17px; }
 .task-columns { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
 .task-column { padding: 18px 14px; min-height: 274px; }
@@ -172,9 +174,13 @@ svg { flex-shrink: 0; }
 .task-card:hover { background: var(--hover); }
 .task-card h4 { font-size: 12px; font-weight: 500; line-height: 1.55; }
 .task-card p { font-size: 11px; color: var(--wz-muted); margin-top: 6px; line-height: 1.6; }
+.task-due { display: block; width: fit-content; margin-top: 8px; color: var(--wz-muted); font-size: 9px; letter-spacing: .05em; text-transform: uppercase; }
+.task-due.overdue { color: var(--wz-danger); }
 .task-footer { display: flex; justify-content: space-between; align-items: center; gap: 5px; color: var(--wz-muted); font-size: 10px; margin-top: 18px; }
-.task-create { display: grid; grid-template-columns: minmax(150px, .8fr) minmax(180px, 1.2fr) auto; gap: 8px; margin-bottom: 14px; }
+.task-create { display: grid; grid-template-columns: minmax(140px, .8fr) minmax(170px, 1.1fr) minmax(132px, .55fr) auto; gap: 8px; margin-bottom: 14px; }
 .task-create input, .task-actions select { min-width: 0; border: 1px solid var(--wz-border); border-radius: 3px; background: var(--wz-elevated); color: var(--wz-text); padding: 8px 10px; font-size: 11px; }
+.task-create input[type="date"] { color-scheme: dark; }
+[data-theme="light"] .task-create input[type="date"] { color-scheme: light; }
 .task-create button { display: flex; align-items: center; justify-content: center; gap: 5px; border: 1px solid var(--wz-border); border-radius: 3px; padding: 8px 12px; background: var(--wz-accent); color: var(--wz-accent-text); font-size: 11px; font-weight: 600; }
 .task-footer > span:last-child { display: flex; align-items: center; gap: 4px; }
 .task-actions { display: flex; align-items: center; gap: 5px; }

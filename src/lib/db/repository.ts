@@ -30,6 +30,7 @@ interface TaskRecord {
   workspaceId: string;
   title: string;
   description?: string;
+  dueDate?: string;
   status: TaskStatus;
   createdAt: Date;
   updatedAt: Date;
@@ -67,6 +68,19 @@ function checkedStatus(status: string | undefined): TaskStatus {
   }
   return status;
 }
+function checkedDueDate(dueDate: string | undefined): string | undefined {
+  if (dueDate === undefined || dueDate === "") return undefined;
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dueDate);
+  if (!match) throw new DatabaseError("INVALID_INPUT", "Due date must use YYYY-MM-DD format.");
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const parsed = new Date(Date.UTC(year, month - 1, day));
+  if (parsed.getUTCFullYear() !== year || parsed.getUTCMonth() !== month - 1 || parsed.getUTCDate() !== day) {
+    throw new DatabaseError("INVALID_INPUT", "Due date must be a valid calendar date.");
+  }
+  return dueDate;
+}
 function checkTaskId(id: string): void {
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) {
     throw new DatabaseError("INVALID_INPUT", "Invalid task ID.");
@@ -77,6 +91,7 @@ function publicTask(record: TaskRecord): Task {
     id: record._id,
     title: record.title,
     ...(record.description === undefined ? {} : { description: record.description }),
+    ...(record.dueDate === undefined ? {} : { dueDate: record.dueDate }),
     status: record.status,
     createdAt: record.createdAt.toISOString(),
     updatedAt: record.updatedAt.toISOString(),
@@ -179,7 +194,7 @@ export async function listTasks(workspaceId: string): Promise<Task[]> {
 
 export async function createTask(
   workspaceId: string,
-  input: { title: string; description?: string; status?: TaskStatus },
+  input: { title: string; description?: string; dueDate?: string; status?: TaskStatus },
 ): Promise<Task> {
   checkWorkspaceId(workspaceId);
   if (!(await getWorkspace(workspaceId))) throw new DatabaseError("NOT_FOUND", "Workspace not found.");
@@ -189,6 +204,7 @@ export async function createTask(
     workspaceId,
     title: checkedTitle(input.title),
     ...(input.description === undefined ? {} : { description: checkedDescription(input.description) }),
+    ...(input.dueDate === undefined ? {} : { dueDate: checkedDueDate(input.dueDate) }),
     status: checkedStatus(input.status),
     createdAt: now,
     updatedAt: now,
@@ -201,9 +217,10 @@ export async function createTask(
 export async function updateTask(workspaceId: string, taskId: string, input: UpdateTaskRequest): Promise<Task | null> {
   checkWorkspaceId(workspaceId);
   checkTaskId(taskId);
-  const changes: Partial<Pick<TaskRecord, "title" | "description" | "status">> & { updatedAt: Date } = { updatedAt: new Date() };
+  const changes: Partial<Pick<TaskRecord, "title" | "description" | "dueDate" | "status">> & { updatedAt: Date } = { updatedAt: new Date() };
   if (input.title !== undefined) changes.title = checkedTitle(input.title);
   if (input.description !== undefined) changes.description = checkedDescription(input.description);
+  if (input.dueDate !== undefined) changes.dueDate = checkedDueDate(input.dueDate);
   if (input.status !== undefined) changes.status = checkedStatus(input.status);
   const db = await getDatabase();
   const record = await db.collection<TaskRecord>("tasks").findOneAndUpdate(
