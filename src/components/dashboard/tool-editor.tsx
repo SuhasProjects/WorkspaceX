@@ -38,7 +38,10 @@ export function ToolEditor({ widget, workspaceId, theme, onSaved, onClose }: Too
     if (!preview || busy) return;
     setBusy("save"); setError("");
     try {
-      const data = await send<{ widget: Widget }>(`/api/widgets/${encodeURIComponent(widget.id)}`, "PUT", preview);
+      const data = await send<{ widget: Widget }>(`/api/widgets/${encodeURIComponent(widget.id)}`, "PUT", {
+        title: preview.title,
+        html: preview.html,
+      });
       onSaved(data.widget);
     } catch (err) { setError(err instanceof Error ? err.message : "Saving failed."); setBusy(null); }
   }
