@@ -11,9 +11,6 @@ const paths = {
   logout: "M9 4H4v16h5 M10 12h11 M17 8l4 4-4 4",
   people: "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2 M13 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0 M22 21v-2a4 4 0 0 0-3-3.87 M16 3.13a4 4 0 0 1 0 7.75",
   waves: "M2 7c2.5-2 5.5-2 8 0s5.5 2 8 0 5.5-2 8 0 M2 12c2.5-2 5.5-2 8 0s5.5 2 8 0 5.5-2 8 0 M2 17c2.5-2 5.5-2 8 0s5.5 2 8 0 5.5-2 8 0",
-  music: "M9 18V5l12-2v13 M9 18a3 3 0 1 1-3-3c1.66 0 3 1.34 3 3Zm12-2a3 3 0 1 1-3-3c1.66 0 3 1.34 3 3Z",
-  musicOff: "M9 18V5l12-2v13 M9 18a3 3 0 1 1-3-3c1.66 0 3 1.34 3 3Zm12-2a3 3 0 1 1-3-3c1.66 0 3 1.34 3 3Z M3 3l18 18",
-  play: "m7 4 13 8-13 8V4Z",
 } as const;
 
 export function Icon({ name, size = 18 }: { name: keyof typeof paths; size?: number }) {

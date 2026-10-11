@@ -2,7 +2,6 @@ import type { Account, Workspace } from "@/types/contracts";
 import { ROLE_LABEL } from "@/lib/auth/roles";
 import { AccountMenu, type DashboardPanel } from "./account-menu";
 import { Icon } from "./icon";
-import { MusicToggle } from "./music-toggle";
 import { setAtmosphereAnimation, useAtmosphereAnimation } from "./use-workspace-widgets";
 
 export function WorkspaceHeader({ account, workspace, workspaces, invitationCount, theme, onTheme, onLogout, onSwitch, onCreate, onOpenPanel }: {
@@ -28,7 +27,6 @@ export function WorkspaceHeader({ account, workspace, workspaces, invitationCoun
     </div>
     <div className="header-actions">
       <button type="button" className="icon-button theme-button" aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} theme`} title={`Switch to ${theme === "dark" ? "light" : "dark"} theme`} onClick={onTheme}><Icon name={theme === "dark" ? "sun" : "moon"} /></button>
-      <MusicToggle />
       <button type="button" className="icon-button animation-toggle" aria-label={`Turn wave animation ${animationEnabled ? "off" : "on"}`} title={`Turn wave animation ${animationEnabled ? "off" : "on"}`} aria-pressed={animationEnabled} onClick={() => setAtmosphereAnimation(!animationEnabled)}><Icon name="waves" /></button>
       <AccountMenu account={account} workspace={workspace} workspaces={workspaces} invitationCount={invitationCount} onSwitch={onSwitch} onCreate={onCreate} onOpenPanel={onOpenPanel} onLogout={onLogout} />
     </div>

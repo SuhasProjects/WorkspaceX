@@ -163,14 +163,6 @@ svg { flex-shrink: 0; }
 .icon-button:not(:disabled):hover { background: var(--hover); border-color: var(--wz-border); color: var(--wz-text); }
 .animation-toggle[aria-pressed="false"] { opacity: .55; }
 .icon-button:disabled { opacity: .45; }
-.music-control { position: relative; display: flex; align-items: center; }
-.music-toggle[aria-pressed="true"] { color: var(--wz-text); background: var(--hover); border-color: var(--wz-border); }
-.music-player-popover { position: absolute; z-index: 100; top: calc(100% + 10px); right: 0; width: min(340px, calc(100vw - 32px)); padding: 10px; border: 1px solid var(--wz-border); border-radius: 8px; background: var(--glass); box-shadow: 0 16px 40px rgb(0 0 0 / .24); }
-.music-player-heading { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 0 0 8px; color: var(--wz-text); font-size: 12px; }
-.music-player-close { display: grid; place-items: center; width: 26px; height: 26px; padding: 0; border: 0; border-radius: 50%; color: var(--wz-muted); background: transparent; cursor: pointer; }
-.music-player-close:hover { color: var(--wz-text); background: var(--hover); }
-.music-player-frame { display: block; width: 100%; aspect-ratio: 8 / 5; border: 0; border-radius: 4px; background: #111; }
-.music-player-source { display: inline-block; margin-top: 8px; color: var(--wz-muted); font-size: 11px; text-decoration: underline; text-underline-offset: 2px; }
 .avatar, .task-avatar { border-radius: 50%; display: grid; place-items: center; background: var(--hover); color: var(--wz-text); border: 1px solid var(--wz-border); font-weight: 500; }
 .avatar { width: 32px; height: 32px; font-size: 10px; }
 .dashboard-main { max-width: 1240px; margin: auto; padding: 44px 0 26px; }

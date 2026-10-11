@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { setAtmosphereAnimation, useAtmosphereAnimation, useWidgetTheme, useWorkspaceWidgets } from "./use-workspace-widgets";
 import { WidgetRenderer } from "./widget-renderer-adapter";
 import { Icon } from "./icon";
-import { MusicToggle } from "./music-toggle";
 import { canManage } from "@/lib/auth/roles";
 import { Atmosphere } from "./atmosphere";
 import { ToolManageBar } from "./tool-manage-bar";
@@ -34,7 +33,7 @@ export function WidgetPage({ widgetId, preview = false }: { widgetId: string; pr
   return <div className="dashboard-shell min-h-screen" data-theme={theme}>
     <Atmosphere />
     <a className="skip-link" href="#widget-content">Skip to tool</a>
-    <nav className="widget-page-nav" aria-label="Workspace tools"><Link href="/">← Dashboard</Link>{preview && <span className="preview-label">Mock preview</span>}<div className="widget-page-links"><Link href="/?tool=widgets">Widgets</Link>{largeWidgets.map((item) => <Link key={item.id} href={`/widgets/${encodeURIComponent(item.id)}${preview ? "?preview=1" : ""}`} aria-current={item.id === widgetId ? "page" : undefined}>{item.title}</Link>)}</div><button type="button" className="icon-button" aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} theme`} onClick={toggleTheme}><Icon name="moon" /></button><MusicToggle /><button type="button" className="icon-button animation-toggle" aria-label={`Turn wave animation ${animationEnabled ? "off" : "on"}`} title={`Turn wave animation ${animationEnabled ? "off" : "on"}`} aria-pressed={animationEnabled} onClick={() => setAtmosphereAnimation(!animationEnabled)}><Icon name="waves" /></button></nav>
+    <nav className="widget-page-nav" aria-label="Workspace tools"><Link href="/">← Dashboard</Link>{preview && <span className="preview-label">Mock preview</span>}<div className="widget-page-links"><Link href="/?tool=widgets">Widgets</Link>{largeWidgets.map((item) => <Link key={item.id} href={`/widgets/${encodeURIComponent(item.id)}${preview ? "?preview=1" : ""}`} aria-current={item.id === widgetId ? "page" : undefined}>{item.title}</Link>)}</div><button type="button" className="icon-button" aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} theme`} onClick={toggleTheme}><Icon name="moon" /></button><button type="button" className="icon-button animation-toggle" aria-label={`Turn wave animation ${animationEnabled ? "off" : "on"}`} title={`Turn wave animation ${animationEnabled ? "off" : "on"}`} aria-pressed={animationEnabled} onClick={() => setAtmosphereAnimation(!animationEnabled)}><Icon name="waves" /></button></nav>
     {isAdmin && widget && <ToolManageBar widget={widget} onDelete={removeWidget} onDuplicate={duplicateWidget} onSize={changeSize} onDeleted={() => router.push("/")} />}
     <main id="widget-content">
       {state.status === "loading" && <div className="page-state h-[calc(100vh-64px)]" role="status"><span className="spinner" /><p>Loading workspace tools…</p></div>}
