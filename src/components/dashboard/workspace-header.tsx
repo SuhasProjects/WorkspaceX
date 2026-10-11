@@ -1,13 +1,18 @@
 import type { Workspace } from "@/types/contracts";
 import { Icon } from "./icon";
 
-export function WorkspaceHeader({ workspace }: { workspace: Workspace }) {
+export function WorkspaceHeader({ workspace, theme, onTheme, onLogout }: {
+  workspace: Workspace;
+  theme: "light" | "dark";
+  onTheme: () => void;
+  onLogout: () => void;
+}) {
   return <header className="workspace-header"><div className="header-inner">
-    <a href="#main" className="brand"><span className="brand-mark"><Icon name="grid" size={19} /></span>Workspace<span className="brand-zero">Zero</span></a>
-    <span className="header-divider" /><span className="workspace-name">{workspace.name}<span className="preview-label">Preview</span></span>
+    <div className="brand"><span className="brand-mark"><Icon name="sparkle" size={20} /></span><span>Workspace<span>Zero</span></span></div>
+    <span className="header-divider" /><span className="workspace-name">{workspace.name}<small>{workspace.id}</small></span>
     <div className="header-actions"><span className="role-badge">{workspace.role === "admin" ? "Admin" : "Member"}</span>
-      <button type="button" className="icon-button" disabled aria-label="Theme switching is coming in Phase 2" title="Theme switching is coming in Phase 2"><Icon name="moon" /></button>
-      <button type="button" className="icon-button" disabled aria-label="Logout will be available when login is connected" title="Login is not connected in this preview"><Icon name="logout" /></button>
-      <span className="avatar" aria-label="Launch team">LT</span></div>
+      <button type="button" className="icon-button" aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} theme`} onClick={onTheme}><Icon name="moon" /></button>
+      <button type="button" className="icon-button" aria-label="Log out" onClick={onLogout}><Icon name="logout" /></button>
+    </div>
   </div></header>;
 }
