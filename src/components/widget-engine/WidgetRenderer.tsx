@@ -4,6 +4,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { LIMITS, type WidgetTheme } from "../../lib/widget-protocol/protocol";
 import { buildWidgetDocument } from "../../lib/widget-protocol/build-document";
 import { registerWidgetFrame, sendThemeToWidget } from "./bridge";
+import { readHostTheme, type HostTheme } from "./host-theme";
 
 export type WidgetStatus = "loading" | "ready" | "failed";
 
@@ -44,6 +45,8 @@ export function WidgetRenderer({
   onRuntimeError,
 }: WidgetRendererProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const hostRef = useRef<HostTheme | null>(null);
   const themeRef = useRef(theme);
   const callbacksRef = useRef({ onStatusChange, onRuntimeError });
   const loadCountRef = useRef(0);
@@ -60,12 +63,26 @@ export function WidgetRenderer({
   const [status, setStatus] = useState<WidgetStatus>("loading");
   const [failure, setFailure] = useState<string | null>(null);
   const [runtimeErrors, setRuntimeErrors] = useState<string[]>([]);
+  // The host's live styling is read from the DOM, so the document can only be
+  // built after mount. Later theme changes are pushed by message.
+  const [hostTheme, setHostTheme] = useState<HostTheme | null>(null);
 
-  const built = useMemo(() => buildWidgetDocument(html, initialTheme), [html, initialTheme]);
+  useIsomorphicLayoutEffect(() => {
+    if (!containerRef.current) return;
+    const host = readHostTheme(containerRef.current);
+    hostRef.current = host;
+    setHostTheme((current) => current ?? host);
+  }, [theme]);
+
+  const built = useMemo(
+    () => (hostTheme ? buildWidgetDocument(html, initialTheme, hostTheme) : null),
+    [html, initialTheme, hostTheme],
+  );
   const frameKey = `${widgetId}|${workspaceId}|${preview}|${attempt}|${hashString(html)}`;
 
   useIsomorphicLayoutEffect(() => {
     setRuntimeErrors([]);
+    if (!built) return;
     if (!built.ok) {
       setFailure(built.error);
       setStatus("failed");
@@ -95,7 +112,7 @@ export function WidgetRenderer({
         if (ready) return;
         ready = true;
         clearTimeout(readyTimer);
-        sendThemeToWidget(frameWindow, themeRef.current);
+        sendThemeToWidget(frameWindow, themeRef.current, hostRef.current?.tokens);
         setStatus("ready");
       },
       onRuntimeError: (message) => {
@@ -112,7 +129,7 @@ export function WidgetRenderer({
 
   useEffect(() => {
     const frameWindow = iframeRef.current?.contentWindow;
-    if (frameWindow && status === "ready") sendThemeToWidget(frameWindow, theme);
+    if (frameWindow && status === "ready") sendThemeToWidget(frameWindow, theme, hostRef.current?.tokens);
   }, [theme, status]);
 
   useEffect(() => {
@@ -134,7 +151,7 @@ export function WidgetRenderer({
 
   return (
     // When the caller passes className it owns the sizing; otherwise fill the parent.
-    <div className={`relative w-full overflow-hidden ${className || "h-full min-h-[240px]"}`}>
+    <div ref={containerRef} className={`relative w-full overflow-hidden ${className || "h-full min-h-[240px]"}`}>
       {status === "failed" ? (
         <div
           role="alert"
@@ -144,7 +161,7 @@ export function WidgetRenderer({
         >
           <p className="font-medium">Widget unavailable</p>
           <p className="max-w-sm opacity-80">{failure}</p>
-          {built.ok && (
+          {built?.ok && (
             <button
               type="button"
               onClick={() => setAttempt((n) => n + 1)}
@@ -161,7 +178,7 @@ export function WidgetRenderer({
             ref={iframeRef}
             title={title}
             sandbox="allow-scripts"
-            srcDoc={built.ok ? built.document : undefined}
+            srcDoc={built?.ok ? built.document : undefined}
             referrerPolicy="no-referrer"
             onLoad={handleLoad}
             className="absolute inset-0 h-full w-full border-0"

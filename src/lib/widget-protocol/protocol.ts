@@ -104,6 +104,8 @@ export interface WidgetThemeMessage {
   channel: typeof WIDGET_CHANNEL;
   kind: "theme";
   theme: WidgetTheme;
+  /** Live `--wz-*` values read from the host page, so widgets match its current styling. */
+  tokens?: Record<string, string>;
 }
 
 export type ParentMessage = WidgetResponseMessage | WidgetThemeMessage;

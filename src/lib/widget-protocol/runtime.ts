@@ -1,5 +1,5 @@
 import { LIMITS, STORAGE_KEY_PATTERN, WIDGET_CHANNEL, type WidgetTheme } from "./protocol";
-import { themeCss } from "./theme";
+import { THEME_TOKENS } from "./theme";
 
 /**
  * Source of the script injected at the top of every widget document.
@@ -27,11 +27,25 @@ const RUNTIME_SOURCE = `(function () {
     post({ kind: "error", message: String(message).slice(0, CONFIG.maxErrorLength) });
   }
 
-  function applyTheme(theme) {
+  function themeCss(theme, tokens) {
+    var merged = {}, base = CONFIG.themeTokens[theme] || {}, k;
+    for (k in base) merged[k] = base[k];
+    if (tokens && typeof tokens === "object") {
+      for (k in tokens) {
+        var v = tokens[k];
+        if (/^--wz-[a-z-]{1,40}$/.test(k) && typeof v === "string" && v.length <= 300 && !/[{};<>]/.test(v)) merged[k] = v;
+      }
+    }
+    var parts = [];
+    for (k in merged) parts.push(k + ":" + merged[k]);
+    return ":root{color-scheme:" + theme + ";" + parts.join(";") + "}";
+  }
+
+  function applyTheme(theme, tokens) {
     if (theme !== "light" && theme !== "dark") return;
     currentTheme = theme;
     var style = document.getElementById("__wz_theme");
-    if (style) style.textContent = CONFIG.themeCss[theme];
+    if (style) style.textContent = themeCss(theme, tokens);
     document.documentElement.setAttribute("data-theme", theme);
     themeListeners.slice().forEach(function (cb) {
       try { cb(theme); } catch (err) { report(err && err.message ? err.message : err); }
@@ -175,7 +189,7 @@ const RUNTIME_SOURCE = `(function () {
     if (e.source !== parentWindow) return;
     var data = e.data;
     if (!data || typeof data !== "object" || data.channel !== CHANNEL) return;
-    if (data.kind === "theme") { applyTheme(data.theme); return; }
+    if (data.kind === "theme") { applyTheme(data.theme, data.tokens); return; }
     if (data.kind !== "response" || typeof data.requestId !== "string") return;
     var entry = pending[data.requestId];
     if (!entry) return;
@@ -226,7 +240,7 @@ export function buildRuntimeScript(theme: WidgetTheme): string {
   const config = {
     channel: WIDGET_CHANNEL,
     theme,
-    themeCss: { light: themeCss("light"), dark: themeCss("dark") },
+    themeTokens: THEME_TOKENS,
     maxErrorReports: LIMITS.maxErrorReportsPerDocument,
     maxErrorLength: LIMITS.maxErrorMessageLength,
     keyPattern: STORAGE_KEY_PATTERN.source,

@@ -1,36 +1,75 @@
 import type { WidgetTheme } from "./protocol";
 
-/**
- * CSS variables every widget can use. Values match the dashboard palette in
- * src/app/globals.css so widgets blend into the page in both themes.
- */
-export const THEME_TOKENS: Record<WidgetTheme, Record<string, string>> = {
+/** CSS variables every widget can use. The host dashboard's live values override these defaults. */
+export const TOKEN_NAMES = [
+  "--wz-background",
+  "--wz-surface",
+  "--wz-text",
+  "--wz-muted",
+  "--wz-border",
+  "--wz-accent",
+  "--wz-accent-text",
+  "--wz-danger",
+  "--wz-success",
+  "--wz-font",
+  "--wz-font-display",
+  "--wz-radius",
+] as const;
+
+export type ThemeTokens = Record<string, string>;
+
+const SHARED_DEFAULTS: ThemeTokens = {
+  "--wz-font": "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
+  "--wz-font-display": "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
+  "--wz-radius": "4px",
+};
+
+/** Fallback palette, mirroring src/app/globals.css at the time of writing. */
+export const THEME_TOKENS: Record<WidgetTheme, ThemeTokens> = {
   light: {
-    "--wz-background": "#f7f8fa",
+    ...SHARED_DEFAULTS,
+    "--wz-background": "#eceff3",
     "--wz-surface": "#ffffff",
-    "--wz-text": "#242433",
-    "--wz-muted": "#686978",
-    "--wz-border": "#e6e7ee",
-    "--wz-accent": "#6853cb",
+    "--wz-text": "#202b3d",
+    "--wz-muted": "#566376",
+    "--wz-border": "rgba(61, 79, 107, .16)",
+    "--wz-accent": "#39577f",
     "--wz-accent-text": "#ffffff",
-    "--wz-danger": "#dc2626",
-    "--wz-success": "#16a34a",
+    "--wz-danger": "#a53644",
+    "--wz-success": "#39785a",
   },
   dark: {
-    "--wz-background": "#171820",
-    "--wz-surface": "#20212c",
-    "--wz-text": "#eeedf4",
-    "--wz-muted": "#b0adbf",
-    "--wz-border": "#373544",
-    "--wz-accent": "#6853cb",
-    "--wz-accent-text": "#ffffff",
-    "--wz-danger": "#f87171",
-    "--wz-success": "#4ade80",
+    ...SHARED_DEFAULTS,
+    "--wz-background": "#101216",
+    "--wz-surface": "#20242c",
+    "--wz-text": "#edf0f5",
+    "--wz-muted": "#adb4c2",
+    "--wz-border": "rgba(224, 232, 255, .13)",
+    "--wz-accent": "#b6c8f0",
+    "--wz-accent-text": "#101216",
+    "--wz-danger": "#ef9a9a",
+    "--wz-success": "#7bc7a5",
   },
 };
 
-export function themeCss(theme: WidgetTheme): string {
-  const vars = Object.entries(THEME_TOKENS[theme])
+const TOKEN_NAME_PATTERN = /^--wz-[a-z-]{1,40}$/;
+
+/** Keeps only well-formed custom properties; values cannot break out of a declaration block. */
+export function sanitizeTokens(input: unknown): ThemeTokens {
+  const out: ThemeTokens = {};
+  if (typeof input !== "object" || input === null) return out;
+  for (const [name, value] of Object.entries(input as Record<string, unknown>)) {
+    if (!TOKEN_NAME_PATTERN.test(name) || typeof value !== "string") continue;
+    const trimmed = value.trim();
+    if (!trimmed || trimmed.length > 300 || /[{};<>]/.test(trimmed)) continue;
+    out[name] = trimmed;
+  }
+  return out;
+}
+
+export function themeCss(theme: WidgetTheme, overrides: ThemeTokens = {}): string {
+  const merged = { ...THEME_TOKENS[theme], ...sanitizeTokens(overrides) };
+  const vars = Object.entries(merged)
     .map(([name, value]) => `${name}:${value}`)
     .join(";");
   return `:root{color-scheme:${theme};${vars}}`;

@@ -171,7 +171,7 @@ export function registerWidgetFrame(frame: Window, registration: WidgetRegistrat
   };
 }
 
-export function sendThemeToWidget(frame: Window, theme: WidgetTheme) {
+export function sendThemeToWidget(frame: Window, theme: WidgetTheme, tokens?: Record<string, string>) {
   if (!registry.has(frame)) return;
-  send(frame, { channel: WIDGET_CHANNEL, kind: "theme", theme });
+  send(frame, { channel: WIDGET_CHANNEL, kind: "theme", theme, tokens });
 }

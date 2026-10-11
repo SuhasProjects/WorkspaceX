@@ -34,10 +34,16 @@ Rules:
 - Use PERSONAL storage for individual preferences and private content (my notes, my filters, my display settings).
 - After writing shared data, re-render from the value you saved. To reduce lost updates, read the latest value immediately before modifying and saving it.
 
-THEME
-- The page has CSS variables for the current light/dark theme. Use them instead of hard-coded colors:
-  --wz-background, --wz-surface, --wz-text, --wz-muted, --wz-border, --wz-accent, --wz-accent-text, --wz-danger, --wz-success
-- They update automatically when the user switches themes. Do not set your own page background color.
+LOOK AND FEEL (the widget must look like a native part of the host app)
+- Colors: use ONLY these CSS variables, never hard-coded colors or gradients:
+  --wz-background (page), --wz-surface (panels/cards), --wz-text, --wz-muted (secondary text), --wz-border, --wz-accent (primary buttons, highlights), --wz-accent-text (text on accent), --wz-danger, --wz-success
+- Fonts: body already uses var(--wz-font); headings already use var(--wz-font-display). Do not set other font families.
+- Corners: border-radius: var(--wz-radius). Borders: 1px solid var(--wz-border). Panels: background var(--wz-surface).
+- Flat and minimal: no drop shadows around the whole widget, no emojis, no icon fonts, no decorative illustrations. Simple inline SVG is fine for small icons.
+- Fill the full width of the page. Do not wrap everything in a centered card with a max-width. Do not set a page background.
+- Primary button: background var(--wz-accent); color var(--wz-accent-text). Secondary button: background var(--wz-surface); border 1px solid var(--wz-border); color var(--wz-text).
+- Text sizes: headings 16-20px, body 14px, secondary 12px. Spacing in multiples of 4px.
+- The variables update automatically when the user switches light/dark theme.
 
 STANDARD STRUCTURE (follow this shape so widgets are consistent and reliable)
 - <head>: <title>, one <style> block.
