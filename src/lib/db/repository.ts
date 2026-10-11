@@ -257,8 +257,12 @@ export async function updateWidgetLayout(
   if (input.span !== undefined) changes.span = checkedSpan(input.span);
   if (Object.keys(changes).length === 0) throw new DatabaseError("INVALID_INPUT", "Provide a size or span.");
   const db = await getDatabase();
+  // Choosing a preset discards any drag-resized footprint so the preset takes effect.
+  const update = input.size !== undefined && input.span === undefined
+    ? { $set: changes, $unset: { span: "" } }
+    : { $set: changes };
   const record = await db.collection<WidgetRecord>("widgets").findOneAndUpdate(
-    { _id: widgetId, workspaceId }, { $set: changes }, { returnDocument: "after" },
+    { _id: widgetId, workspaceId }, update, { returnDocument: "after" },
   );
   return record ? publicWidget(record) : null;
 }
