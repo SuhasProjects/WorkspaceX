@@ -23,7 +23,7 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: Georgia, "Times New Roman", serif;
+  --font-sans: var(--wz-font-body);
   --font-mono: Consolas, monospace;
 }
 [data-theme] {
@@ -64,7 +64,7 @@
   color-scheme: light;
 }
 * { box-sizing: border-box; }
-body { margin: 0; background: var(--background); color: var(--foreground); font-family: Georgia, "Times New Roman", serif; font-size: 14px; line-height: 1.6; }
+body { margin: 0; background: var(--background); color: var(--foreground); font-family: var(--wz-font-body); font-weight: 300; font-size: 14px; line-height: 1.6; }
 h1, h2, h3, h4, p { margin: 0; }
 button, input, select, textarea { font: inherit; }
 button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
@@ -257,9 +257,9 @@ svg { flex-shrink: 0; }
 @supports not (backdrop-filter: blur(1px)) { .workspace-header, .builder, .overview-card, .task-column, .tool-directory a, .empty-tools, .widget-card { background: var(--wz-surface); } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
 
-/* Locally hosted Jost Light display typography, paired with Inter UI text. */
+/* Locally hosted Jost Light typography for headings and UI text. */
 :root {
-  --wz-font-display: Georgia, "Times New Roman", serif;
+  --wz-font-display: "Jost", Arial, sans-serif;
   --wz-font-body: var(--wz-font-display);
 }
 body { font-family: var(--wz-font-body); }
