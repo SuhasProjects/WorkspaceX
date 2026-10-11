@@ -92,19 +92,57 @@ export interface GenerationMessage {
   content: string;
 }
 
+export interface WidgetReference {
+  title: string;
+  html: string;
+}
+
 export interface GenerationInput {
   /** What the admin asked for: a new widget description, or a change request in edit mode. */
   prompt: string;
   /** Existing widget HTML. When present, the model edits it instead of starting over. */
   baseHtml?: string;
+  /**
+   * Recent widgets from the same workspace, used as look-and-feel examples.
+   * Only their styles and markup skeleton are sent; scripts are stripped so
+   * bugs and data keys are not copied. At most 2 are used.
+   */
+  references?: WidgetReference[];
 }
 
+const MAX_REFERENCES = 2;
+const MAX_REFERENCE_CHARS = 2_500;
+
+/** Reduces a widget to the parts that convey its appearance. */
+export function summarizeReference({ title, html }: WidgetReference): string {
+  const styles = Array.from(html.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/gi), (m) => m[1].trim()).join("\n");
+  const body = html.match(/<body[^>]*>([\s\S]*?)<\/body>/i)?.[1] ?? html;
+  const markup = body
+    .replace(/<script[\s\S]*?<\/script>/gi, "")
+    .replace(/<svg[\s\S]*?<\/svg>/gi, "<svg/>")
+    .replace(/\s+/g, " ")
+    .trim();
+  const budget = Math.max(400, MAX_REFERENCE_CHARS - styles.length);
+  return `Title: ${title}\nCSS:\n${styles.slice(0, 1_200)}\nMarkup:\n${markup.slice(0, budget)}`;
+}
+
+const REFERENCE_INSTRUCTIONS = `
+REFERENCE WIDGETS
+The examples below are existing tools in this workspace. Match their visual conventions (structure, spacing, use of the wz- classes and variables) so the new tool looks like it belongs with them. They are examples of appearance only: do not copy their features, text, or storage keys unless the request asks for them.`;
+
 /** Builds the chat messages for Luminal. Backend passes these straight through. */
-export function buildGenerationMessages({ prompt, baseHtml }: GenerationInput): GenerationMessage[] {
+export function buildGenerationMessages({ prompt, baseHtml, references = [] }: GenerationInput): GenerationMessage[] {
   const request = prompt.trim();
   if (!baseHtml?.trim()) {
+    const examples = references
+      .filter((ref) => ref && typeof ref.html === "string" && ref.html.trim())
+      .slice(0, MAX_REFERENCES)
+      .map((ref, index) => `Example ${index + 1}:\n\`\`\`\n${summarizeReference(ref)}\n\`\`\``);
+    const system = examples.length
+      ? WIDGET_SYSTEM_PROMPT + "\n" + REFERENCE_INSTRUCTIONS + "\n\n" + examples.join("\n\n")
+      : WIDGET_SYSTEM_PROMPT;
     return [
-      { role: "system", content: WIDGET_SYSTEM_PROMPT },
+      { role: "system", content: system },
       { role: "user", content: request },
     ];
   }
