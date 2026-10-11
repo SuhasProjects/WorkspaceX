@@ -240,7 +240,7 @@ svg { flex-shrink: 0; }
 .todo-complete .task-due { text-decoration: none; }
 .sample-caption { font-size: 10px; color: var(--wz-muted); margin-top: 17px; }
 .task-columns { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
-.task-column { padding: 18px 14px; min-height: 274px; border-radius: 0; }
+.task-column { padding: 18px 14px; min-height: 200px; border-radius: 0; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .045); }
 .task-column h3 { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 500; margin: 0 4px 17px; }
 .status-dot { width: 6px; height: 6px; border-radius: 50%; background: #b2bdcd; }
 .in_progress .status-dot { background: #d3b78b; }
