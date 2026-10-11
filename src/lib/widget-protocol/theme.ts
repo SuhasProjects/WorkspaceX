@@ -1,26 +1,29 @@
 import type { WidgetTheme } from "./protocol";
 
-/** CSS variables every widget can use. Values mirror Minimal Light / Obsidian Dark. */
+/**
+ * CSS variables every widget can use. Values match the dashboard palette in
+ * src/app/globals.css so widgets blend into the page in both themes.
+ */
 export const THEME_TOKENS: Record<WidgetTheme, Record<string, string>> = {
   light: {
-    "--wz-background": "#ffffff",
-    "--wz-surface": "#f6f7f9",
-    "--wz-text": "#111827",
-    "--wz-muted": "#6b7280",
-    "--wz-border": "#e5e7eb",
-    "--wz-accent": "#4f46e5",
+    "--wz-background": "#f7f8fa",
+    "--wz-surface": "#ffffff",
+    "--wz-text": "#242433",
+    "--wz-muted": "#686978",
+    "--wz-border": "#e6e7ee",
+    "--wz-accent": "#6853cb",
     "--wz-accent-text": "#ffffff",
     "--wz-danger": "#dc2626",
     "--wz-success": "#16a34a",
   },
   dark: {
-    "--wz-background": "#0b0d10",
-    "--wz-surface": "#15181d",
-    "--wz-text": "#e6e8eb",
-    "--wz-muted": "#9aa3ae",
-    "--wz-border": "#262b33",
-    "--wz-accent": "#7c83ff",
-    "--wz-accent-text": "#0b0d10",
+    "--wz-background": "#171820",
+    "--wz-surface": "#20212c",
+    "--wz-text": "#eeedf4",
+    "--wz-muted": "#b0adbf",
+    "--wz-border": "#373544",
+    "--wz-accent": "#6853cb",
+    "--wz-accent-text": "#ffffff",
     "--wz-danger": "#f87171",
     "--wz-success": "#4ade80",
   },
