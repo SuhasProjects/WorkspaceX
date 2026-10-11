@@ -11,6 +11,8 @@ const columns: { status: TaskStatus; title: string }[] = [
 interface TaskBoardProps {
   tasks: Task[];
   canEdit: boolean;
+  /** Members can add tasks even though only admins can edit or delete them. */
+  canCreate: boolean;
   busy: boolean;
   message: string;
   onCreate: (title: string, description: string, dueDate: string, dueTime: string) => Promise<boolean>;
@@ -19,7 +21,7 @@ interface TaskBoardProps {
   onDelete: (id: string) => void;
 }
 
-export function TaskBoard({ tasks, canEdit, busy, message, onCreate, onUpdate, onStatus, onDelete }: TaskBoardProps) {
+export function TaskBoard({ tasks, canEdit, canCreate, busy, message, onCreate, onUpdate, onStatus, onDelete }: TaskBoardProps) {
   const [creating, setCreating] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -46,8 +48,8 @@ export function TaskBoard({ tasks, canEdit, busy, message, onCreate, onUpdate, o
   }
 
   return <section className="section-block" aria-labelledby="tasks-heading">
-    <div className="section-heading"><div><h2 id="tasks-heading">Team tasks <span className="count-badge">{tasks.length}</span></h2></div>{canEdit ? <button type="button" className="task-create-toggle" aria-expanded={creating} aria-controls="task-create-form" onClick={() => setCreating((current) => !current)}><Icon name={creating ? "close" : "plus"} size={14} />{creating ? "Close" : "Create task"}</button> : <span className="section-note">Shared with your team</span>}</div>
-    {canEdit && creating && <form id="task-create-form" className="task-create" onSubmit={submit}>
+    <div className="section-heading"><div><h2 id="tasks-heading">Team tasks <span className="count-badge">{tasks.length}</span></h2></div>{canCreate ? <button type="button" className="task-create-toggle" aria-expanded={creating} aria-controls="task-create-form" onClick={() => setCreating((current) => !current)}><Icon name={creating ? "close" : "plus"} size={14} />{creating ? "Close" : "Create task"}</button> : <span className="section-note">Shared with your team</span>}</div>
+    {canCreate && creating && <form id="task-create-form" className="task-create" onSubmit={submit}>
       <label><span className="task-field-label">Task name</span><input value={title} onChange={(event) => setTitle(event.target.value)} maxLength={120} required placeholder="What needs to be done?" autoFocus /></label>
       <label><span className="task-field-label">Details <small>Optional</small></span><textarea value={description} onChange={(event) => setDescription(event.target.value)} maxLength={2000} rows={3} placeholder="Add context for your team" /></label>
       <div className="task-create-schedule">

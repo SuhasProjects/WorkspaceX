@@ -15,7 +15,8 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     checkOrigin(request);
-    const session = await requireSession("admin");
+    // Any workspace member may add a task; editing and deleting stay admin-only.
+    const session = await requireSession();
     const body = await readJsonObject(request);
     onlyFields(body, ["title", "description", "dueDate", "dueTime", "status"]);
     if (typeof body.title !== "string" || (body.description !== undefined && typeof body.description !== "string") ||

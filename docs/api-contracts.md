@@ -17,7 +17,7 @@ hashes never cross it. Responses containing workspace data must not be cached.
 | POST /api/auth/logout | None | `{ success: true }` | Idempotent, including logged out | 200 |
 | GET /api/workspaces/current | None | `{ workspace: Workspace }` | Admin/member | 200 |
 | GET /api/tasks | None | `{ tasks: Task[] }` | Admin/member | 200 |
-| POST /api/tasks | title, optional description, dueDate, dueTime, and status (default todo) | `{ task: Task }` | Admin | 201 |
+| POST /api/tasks | title, optional description, dueDate, dueTime, and status (default todo) | `{ task: Task }` | Admin/member | 201 |
 | PATCH /api/tasks/[id] | At least one of title, description, dueDate, dueTime, or status | `{ task: Task }` | Admin | 200 |
 | DELETE /api/tasks/[id] | Path ID | `{ success: true }` | Admin | 200 |
 | POST /api/generate | prompt, optional baseHtml for editing an existing widget | `{ title, html, optional size }` | Admin | 200 |
