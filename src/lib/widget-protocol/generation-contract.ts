@@ -57,7 +57,7 @@ QUALITY
 - Never leave the user stuck: if a choice is remembered (for example a vote), always show a clear way to change it. Do not permanently disable controls.
 - Selecting an option must give immediate visual feedback (highlight, checkmark, or count update) before and after saving.
 - Attach event handlers with addEventListener or on* properties after the elements exist (place scripts at the end of <body>).
-- Keep the document compact, under 8 KB: no code comments, no blank-line padding, concise CSS, short variable names are fine. Output is cut off if it is too long, which breaks the widget.`;
+- Keep the document under 20 KB: no code comments, no blank-line padding, concise CSS. Spend the space on functionality, not filler.`;
 
 /**
  * Appended to the system prompt when editing an existing widget. The current
