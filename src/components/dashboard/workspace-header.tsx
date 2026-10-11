@@ -1,4 +1,6 @@
+import Link from "next/link";
 import type { Workspace } from "@/types/contracts";
+import { planDefinition } from "@/lib/billing/plans";
 import { Icon } from "./icon";
 import { setAtmosphereAnimation, useAtmosphereAnimation } from "./use-workspace-widgets";
 
@@ -16,6 +18,9 @@ export function WorkspaceHeader({ workspace, theme, onTheme, onLogout }: {
       <span className="header-divider" aria-hidden="true" />
       <span className="workspace-name" title={workspace.name}>{workspace.name}</span>
       <span className="role-badge">{workspace.role === "admin" ? "Admin" : "Member"}</span>
+      <Link href="/pricing" className={`plan-badge plan-${workspace.plan}`} title="View plans and usage">
+        {planDefinition(workspace.plan).name} plan{workspace.role === "admin" && workspace.plan === "free" && <span className="plan-badge-cta">Upgrade</span>}
+      </Link>
     </div>
     <div className="header-actions">
       <button type="button" className="icon-button theme-button" aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} theme`} title={`Switch to ${theme === "dark" ? "light" : "dark"} theme`} onClick={onTheme}><Icon name={theme === "dark" ? "sun" : "moon"} /></button>
