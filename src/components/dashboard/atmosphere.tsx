@@ -1,5 +1,6 @@
 "use client";
 
+import { memo, useId } from "react";
 import { useAtmosphereAnimation } from "./use-workspace-widgets";
 
 const WAVE_COUNT = 17;
@@ -29,44 +30,46 @@ function waveBand(upper: number, lower: number, center: number) {
   return `M ${wavePoints(upper, center).join(" L ")} L ${wavePoints(lower, center, true).join(" L ")} Z`;
 }
 
+const CENTER = (WAVE_COUNT - 1) / 2;
+const WAVE_GEOMETRY = {
+  bands: Array.from({ length: WAVE_COUNT - 1 }, (_, index) =>
+    waveBand(index, index + 1, CENTER)),
+  lines: Array.from({ length: WAVE_COUNT }, (_, index) =>
+    waveContour(index, CENTER)),
+};
+
+const AtmosphereArtwork = memo(function AtmosphereArtwork({ tileId }: { tileId: string }) {
+  return (
+    <svg viewBox="0 0 3200 1100" preserveAspectRatio="xMidYMin slice">
+      <defs>
+        <g id={tileId}>
+          {WAVE_GEOMETRY.bands.map((path, index) => (
+            <path key={`band-${index}`} className="atmosphere-band" d={path} fill="currentColor" fillOpacity=".28" />
+          ))}
+          {WAVE_GEOMETRY.lines.map((path, index) => (
+            <path key={`line-${index}`} d={path} fill="none" stroke="currentColor" strokeWidth="1.5" />
+          ))}
+        </g>
+      </defs>
+      <g className="atmosphere-track">
+        <g className="atmosphere-breath">
+          {[-1600, 0, 1600, 3200].map((offset) => (
+            <use key={offset} href={`#${tileId}`} transform={`translate(${offset} 0)`} />
+          ))}
+        </g>
+      </g>
+    </svg>
+  );
+});
+
 /** Stacked, seamless wave contours for the dashboard background. */
 export function Atmosphere() {
   const animationEnabled = useAtmosphereAnimation();
-  const center = (WAVE_COUNT - 1) / 2;
-  const waves = Array.from({ length: WAVE_COUNT }, (_, index) => ({
-    index,
-  }));
+  const tileId = `workspacezero-atmosphere-${useId().replace(/:/g, "")}`;
 
   return (
     <div className="atmosphere" data-animation={animationEnabled ? "on" : "off"} aria-hidden="true">
-      <svg viewBox="0 0 3200 1100" preserveAspectRatio="xMidYMin slice">
-        <g className="atmosphere-track">
-          <g className="atmosphere-breath">
-            {[-1600, 0, 1600, 3200].map((offset) => (
-              <g key={offset} transform={`translate(${offset} 0)`}>
-                {waves.slice(0, -1).map((wave, index) => (
-                  <path
-                    key={`band-${index}`}
-                    className="atmosphere-band"
-                    d={waveBand(wave.index, waves[index + 1].index, center)}
-                    fill="currentColor"
-                    fillOpacity=".28"
-                  />
-                ))}
-                {waves.map((wave, index) => (
-                  <path
-                    key={`line-${index}`}
-                    d={waveContour(wave.index, center)}
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.5"
-                  />
-                ))}
-              </g>
-            ))}
-          </g>
-        </g>
-      </svg>
+      <AtmosphereArtwork tileId={tileId} />
     </div>
   );
 }
