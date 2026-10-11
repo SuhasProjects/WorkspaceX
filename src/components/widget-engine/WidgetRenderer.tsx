@@ -133,7 +133,8 @@ export function WidgetRenderer({
   const overlay = dark ? "bg-neutral-950/80 text-neutral-300" : "bg-white/80 text-neutral-600";
 
   return (
-    <div className={`relative h-full min-h-[240px] w-full overflow-hidden ${className}`}>
+    // When the caller passes className it owns the sizing; otherwise fill the parent.
+    <div className={`relative w-full overflow-hidden ${className || "h-full min-h-[240px]"}`}>
       {status === "failed" ? (
         <div
           role="alert"

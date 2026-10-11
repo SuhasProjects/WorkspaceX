@@ -202,7 +202,7 @@ h1, h2, h3, h4, p { margin: 0; }
 .access-form input { width: 100%; border: 1px solid var(--wz-border); border-radius: 7px; padding: 11px; background: var(--wz-surface); color: var(--wz-text); font: inherit; }
 .builder-preview { margin-top: 22px; border-top: 1px solid var(--wz-border); padding-top: 18px; }
 .builder-preview h3 { margin-bottom: 10px; font-size: 14px; }
-.builder-preview-frame { min-height: 280px; border: 1px solid var(--wz-border); border-radius: 8px; background: var(--wz-surface); }
+.builder-preview-frame { min-height: 420px; border: 1px solid var(--wz-border); border-radius: 8px; background: var(--wz-surface); }
 .preview-actions { display: grid; grid-template-columns: 1fr 1.5fr; gap: 8px; margin-top: 10px; }
 .preview-actions > button:first-child { border: 1px solid var(--wz-border); border-radius: 7px; background: transparent; color: var(--wz-text); }
 
