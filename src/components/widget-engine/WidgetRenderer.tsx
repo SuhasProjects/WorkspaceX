@@ -75,8 +75,16 @@ export function WidgetRenderer({
   }, [theme]);
 
   const built = useMemo(
-    () => (hostTheme ? buildWidgetDocument(html, initialTheme, hostTheme) : null),
-    [html, initialTheme, hostTheme],
+    () => {
+      if (!hostTheme) return null;
+      // This poll locks its options after voting. Keep the results legible
+      // instead of fading the text, selected border, and blue check together.
+      const pollStyle = title === "What Next Poll"
+        ? '<style>html[data-theme="light"] button:disabled{opacity:1!important}</style>'
+        : "";
+      return buildWidgetDocument(pollStyle + html, initialTheme, hostTheme);
+    },
+    [html, initialTheme, hostTheme, title],
   );
   const frameKey = `${widgetId}|${workspaceId}|${preview}|${attempt}|${hashString(html)}`;
 
