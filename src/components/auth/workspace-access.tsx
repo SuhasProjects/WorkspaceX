@@ -15,7 +15,7 @@ export function WorkspaceAccess({ onSuccess }: { onSuccess: (sound: WorkspaceRev
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setBusy(true); setError("");
-    const revealSound = mode === "login" ? prepareWorkspaceRevealSound() : null;
+    const revealSound = prepareWorkspaceRevealSound();
     const data = new FormData(event.currentTarget);
     const body = mode === "login"
       ? { workspaceId: String(data.get("workspaceId") ?? "").trim().toLowerCase(), password: data.get("password") }
