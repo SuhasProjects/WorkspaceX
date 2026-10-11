@@ -1,5 +1,6 @@
 import { LIMITS } from "./protocol";
 import { normalizeWidgetHtml } from "./build-document";
+import type { WidgetSize } from "@/types/contracts";
 
 /**
  * System prompt for the Luminal widget generator. Backend sends this as the
@@ -10,6 +11,8 @@ export const WIDGET_SYSTEM_PROMPT = `You build small, self-contained web apps ("
 OUTPUT FORMAT
 - Reply with ONE complete HTML document and nothing else: no explanations, no Markdown fences.
 - Start with <!DOCTYPE html>. Put a short human-friendly name (2-5 words) in <title>.
+- In <head>, include exactly one size classification: <meta name="workspacezero:size" content="small">. Use only small, medium, or large.
+- Choose small for a focused poll, counter, timer, single statistic, or quick action; medium for a list, tracker, chart, or multi-field form; large for a management system, complex dashboard, large table, or multi-step workflow.
 - All CSS goes in <style> tags and all JavaScript in inline <script> tags in the same document.
 
 WHERE THE WIDGET RUNS
@@ -85,6 +88,7 @@ You are modifying an existing widget, not creating a new one.
 - Apply only the requested change. Keep the layout, styling, wording, structure, and behavior of everything else exactly as it is.
 - Keep every storage key the same so data already saved by the team keeps working. Add new keys only if the change needs new data.
 - Keep the <title> unless the change is about the title.
+- Keep the workspacezero:size metadata unless the requested change materially changes the widget's complexity; otherwise reclassify it using the same rules.
 - Return the complete updated HTML document, following the same output format rules.`;
 
 export interface GenerationMessage {
@@ -159,6 +163,7 @@ export function buildGenerationMessages({ prompt, baseHtml, references = [] }: G
 export interface ParsedWidget {
   title: string;
   html: string;
+  size: WidgetSize;
 }
 
 export type ParseModelOutputResult =
@@ -166,6 +171,20 @@ export type ParseModelOutputResult =
   | { ok: false; error: string };
 
 const FALLBACK_TITLE = "New widget";
+const FALLBACK_SIZE: WidgetSize = "medium";
+
+function readAttribute(tag: string, name: string): string | undefined {
+  const match = tag.match(new RegExp(`\\b${name}\\s*=\\s*(?:"([^"]*)"|'([^']*)'|([^\\s>]+))`, "i"));
+  return match?.[1] ?? match?.[2] ?? match?.[3];
+}
+
+function readWidgetSize(html: string): { size: WidgetSize; warning?: string } {
+  const tag = (html.match(/<meta\b[^>]*>/gi) ?? []).find((candidate) => readAttribute(candidate, "name")?.toLowerCase() === "workspacezero:size");
+  if (!tag) return { size: FALLBACK_SIZE, warning: "Missing widget size metadata; defaulted to medium." };
+  const value = readAttribute(tag, "content")?.toLowerCase();
+  if (value === "small" || value === "medium" || value === "large") return { size: value };
+  return { size: FALLBACK_SIZE, warning: "Invalid widget size metadata; defaulted to medium." };
+}
 
 function decodeBasicEntities(text: string): string {
   return text
@@ -239,10 +258,11 @@ export function parseModelOutput(raw: string): ParseModelOutputResult {
     return { ok: false, error: "The generated widget is too large." };
   }
 
+  const classification = readWidgetSize(html);
   return {
     ok: true,
-    widget: { title: resolvedTitle, html },
-    warnings: checkWidgetCompatibility(html),
+    widget: { title: resolvedTitle, html, size: classification.size },
+    warnings: [...checkWidgetCompatibility(html), ...(classification.warning ? [classification.warning] : [])],
   };
 }
 

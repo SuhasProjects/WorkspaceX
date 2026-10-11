@@ -13,7 +13,7 @@ interface VerificationResponse {
   error: { code?: string };
   data: {
     workspace: { role: string };
-    widget: { id: string };
+    widget: { id: string; size: string };
     value: unknown;
     widgets: unknown[];
   };
@@ -48,8 +48,12 @@ async function main() {
       title: "Test", html: "<!DOCTYPE html><html><head><title>Test</title></head><body>Test</body></html>",
     }, adminCookie);
     assert.equal(widget.status, 201);
+    assert.equal(widget.json.data.widget.size, "medium");
     stage = "storage";
     savedWidgetId = widget.json.data.widget.id;
+    const resized = await call(`/api/widgets/${savedWidgetId}`, "PATCH", { size: "small" }, adminCookie);
+    assert.equal(resized.status, 200);
+    assert.equal(resized.json.data.widget.size, "small");
     assert.equal((await call("/api/storage", "PUT", { widgetId: savedWidgetId, key: "votes", value: 2 }, adminCookie)).status, 200);
     const query = `/api/storage?widgetId=${savedWidgetId}&key=votes`;
     assert.deepEqual((await call(query, "GET", undefined, adminCookie)).json.data, { value: 2, exists: true });

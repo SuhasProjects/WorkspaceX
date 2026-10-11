@@ -104,9 +104,9 @@ export async function generateWidget(prompt: string, baseHtml?: string, referenc
   }
   const parsed = parseModelOutput(raw);
   if (!parsed.ok) throw new GenerationError("GENERATION_FAILED", "Luminal did not return a usable widget document.");
-  const { title, html } = parsed.widget;
+  const { title, html, size } = parsed.widget;
   if (!title || title.length > 120 || Buffer.byteLength(html, "utf8") > MAX_HTML_BYTES) {
     throw new GenerationError("GENERATION_FAILED", "Luminal returned an incompatible widget document.");
   }
-  return { title, html };
+  return { title, html, size };
 }

@@ -1,7 +1,7 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
 import { MongoServerError } from "mongodb";
-import type { GeneratedWidget, JsonValue, Task, TaskStatus, UpdateTaskRequest, Widget } from "@/types/contracts";
+import type { GeneratedWidget, JsonValue, Task, TaskStatus, UpdateTaskRequest, Widget, WidgetSize } from "@/types/contracts";
 import { DatabaseError, getDatabase } from "./client";
 
 interface WorkspaceRecord {
@@ -18,6 +18,7 @@ interface WidgetRecord {
   workspaceId: string;
   title: string;
   html: string;
+  size?: WidgetSize;
   createdAt: Date;
 }
 interface WidgetDataRecord {
@@ -57,7 +58,14 @@ function checkedTitle(title: string): string {
   return result;
 }
 function publicWidget(record: WidgetRecord): Widget {
-  return { id: record._id, title: record.title, html: record.html, createdAt: record.createdAt.toISOString() };
+  return { id: record._id, title: record.title, html: record.html, size: record.size ?? "large", createdAt: record.createdAt.toISOString() };
+}
+function checkedWidgetSize(size: unknown, fallback: WidgetSize): WidgetSize {
+  if (size === undefined) return fallback;
+  if (size !== "small" && size !== "medium" && size !== "large") {
+    throw new DatabaseError("INVALID_INPUT", "Widget size must be small, medium, or large.");
+  }
+  return size;
 }
 function checkedDescription(description: string | undefined): string | undefined {
   if (description === undefined) return undefined;
@@ -173,7 +181,7 @@ export async function createWidget(workspaceId: string, input: GeneratedWidget):
   checkedHtml(input.html);
   if (!(await getWorkspace(workspaceId))) throw new DatabaseError("NOT_FOUND", "Workspace not found.");
   const db = await getDatabase();
-  const record: WidgetRecord = { _id: randomUUID(), workspaceId, title, html: input.html, createdAt: new Date() };
+  const record: WidgetRecord = { _id: randomUUID(), workspaceId, title, html: input.html, size: checkedWidgetSize(input.size, "medium"), createdAt: new Date() };
   await db.collection<WidgetRecord>("widgets").insertOne(record);
   return publicWidget(record);
 }
@@ -223,6 +231,17 @@ export async function getWidget(workspaceId: string, widgetId: string): Promise<
   checkWorkspaceId(workspaceId);
   const db = await getDatabase();
   const record = await db.collection<WidgetRecord>("widgets").findOne({ _id: widgetId, workspaceId });
+  return record ? publicWidget(record) : null;
+}
+
+export async function updateWidgetSize(workspaceId: string, widgetId: string, size: WidgetSize): Promise<Widget | null> {
+  checkWorkspaceId(workspaceId);
+  const db = await getDatabase();
+  const record = await db.collection<WidgetRecord>("widgets").findOneAndUpdate(
+    { _id: widgetId, workspaceId },
+    { $set: { size: checkedWidgetSize(size, "medium") } },
+    { returnDocument: "after" },
+  );
   return record ? publicWidget(record) : null;
 }
 

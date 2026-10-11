@@ -1,9 +1,31 @@
-import { deleteWidget, updateWidget } from "@/lib/db/repository";
+import { deleteWidget, updateWidget, updateWidgetSize } from "@/lib/db/repository";
 import { checkOrigin, failure, HttpError, onlyFields, readJsonObject, success } from "@/lib/auth/http";
-import { DatabaseError } from "@/lib/db/client";
 import { requireSession } from "@/lib/auth/session";
+import { DatabaseError } from "@/lib/db/client";
+import type { WidgetSize } from "@/types/contracts";
 
 export const runtime = "nodejs";
+
+export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  try {
+    checkOrigin(request);
+    const session = await requireSession("admin");
+    const body = await readJsonObject(request);
+    onlyFields(body, ["size"]);
+    if (body.size !== "small" && body.size !== "medium" && body.size !== "large") {
+      throw new HttpError(400, "INVALID_INPUT", "Widget size must be small, medium, or large.");
+    }
+    const { id } = await params;
+    const widget = await updateWidgetSize(session.workspaceId, id, body.size as WidgetSize);
+    if (!widget) throw new HttpError(404, "NOT_FOUND", "Widget not found.");
+    return success({ widget });
+  } catch (error) {
+    if (error instanceof DatabaseError && error.code === "INVALID_INPUT") {
+      return failure(new HttpError(400, "INVALID_INPUT", error.message));
+    }
+    return failure(error);
+  }
+}
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     checkOrigin(request);

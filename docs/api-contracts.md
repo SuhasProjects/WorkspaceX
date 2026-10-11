@@ -20,9 +20,10 @@ hashes never cross it. Responses containing workspace data must not be cached.
 | POST /api/tasks | title, optional description, dueDate, dueTime, and status (default todo) | `{ task: Task }` | Admin | 201 |
 | PATCH /api/tasks/[id] | At least one of title, description, dueDate, dueTime, or status | `{ task: Task }` | Admin | 200 |
 | DELETE /api/tasks/[id] | Path ID | `{ success: true }` | Admin | 200 |
-| POST /api/generate | prompt, optional baseHtml for editing an existing widget | `{ title, html }` | Admin | 200 |
+| POST /api/generate | prompt, optional baseHtml for editing an existing widget | `{ title, html, optional size }` | Admin | 200 |
 | GET /api/widgets | None | `{ widgets: Widget[] }` | Admin/member | 200 |
-| POST /api/widgets | title, html | `{ widget: Widget }` | Admin | 201 |
+| POST /api/widgets | title, html, optional size | `{ widget: Widget }` | Admin | 201 |
+| PATCH /api/widgets/[id] | size | `{ widget: Widget }` | Admin | 200 |
 | DELETE /api/widgets/[id] | Path ID | `{ success: true }` | Admin | 200 |
 | GET /api/storage | Query widgetId, key | `{ value, exists }` | Admin/member, registered widget | 200 |
 | PUT /api/storage | widgetId, key, value | `{ success: true }` | Admin/member, registered widget | 200 |
@@ -49,6 +50,10 @@ workspace. Task statuses are `todo`, `in_progress`, `done`. Task due dates use
 `YYYY-MM-DD` and optional due times use `HH:mm`. Clearing a due date also clears its time. Clear a description
 with an empty string. HTML validation checks the document format and size; it
 does not establish that generated code is safe.
+
+Widget sizes are `small`, `medium`, or `large`. Newly saved widgets without a
+size default to `medium` during the generator transition. Legacy database records
+without a size are returned as `large` so existing full-page tools remain usable.
 
 Missing storage returns `{ value: null, exists: false }`. A stored null returns
 `{ value: null, exists: true }`. Lists return empty arrays when empty, ordered by
@@ -79,8 +84,8 @@ The health endpoint checks HTTP availability only, not MongoDB or Luminal.
 
 ## Generated-widget and engine agreement
 
-Generation returns `title` and a complete self-contained HTML document. Saving
-is a separate admin action. Luminal's verified endpoint/model and service
+Generation returns `title`, a complete self-contained HTML document, and may
+return a recommended `size`. Saving is a separate admin action. Luminal's verified endpoint/model and service
 availability are dependencies of the later generation phase.
 
 Engine injects the async `workspace` SDK before widget scripts execute. SDK reads

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
-import type { ApiData, ApiResponse, Theme, Widget, Workspace } from "@/types/contracts";
+import type { ApiData, ApiResponse, Theme, Widget, WidgetSize, Workspace } from "@/types/contracts";
 import { mockWorkspace, readPreviewWidgets } from "./mock-data";
 
 type WorkspaceState =
@@ -89,8 +89,22 @@ export function useWorkspaceWidgets(preview = false) {
     setState({ ...state, widgets: state.widgets.filter((widget) => widget.id !== id) });
     return null;
   }
+  /** Updates the persisted display size and immediately moves the widget between views. */
+  async function updateWidgetSize(id: string, size: WidgetSize): Promise<string | null> {
+    if (state.status !== "ready") return "Not ready.";
+    const response = await fetch(`/api/widgets/${encodeURIComponent(id)}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      credentials: "same-origin",
+      body: JSON.stringify({ size }),
+    });
+    const result = (await response.json().catch(() => null)) as ApiResponse<{ widget: Widget }> | null;
+    if (!response.ok || !result?.data) return result?.error?.message ?? "The tool size could not be updated.";
+    setState({ ...state, widgets: state.widgets.map((widget) => widget.id === id ? result.data!.widget : widget) });
+    return null;
+  }
   const resolvedState: WorkspaceState = preview ? { status: "ready", workspace: mockWorkspace, widgets: previewWidgets } : state;
-  return { state: resolvedState, retry, reorderWidget, removeWidget, updateWidget };
+  return { state: resolvedState, retry, reorderWidget, removeWidget, updateWidget, updateWidgetSize };
 }
 
 function previewSnapshot(): string | null {

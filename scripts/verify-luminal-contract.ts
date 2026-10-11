@@ -10,15 +10,20 @@ async function main() {
   globalThis.fetch = async (_input, init) => {
     sent.push(JSON.parse(String(init?.body)) as Record<string, unknown>);
     return Response.json({ choices: [{ message: { content:
-      "```html\n<!DOCTYPE html><html><head><title>Team Poll</title></head><body><button>Vote</button><img src=\"https://example.invalid/icon.png\"></body></html>\n```" } }] });
+      "```html\n<!DOCTYPE html><html><head><title>Team Poll</title><meta name=\"workspacezero:size\" content=\"small\"></head><body><button>Vote</button><img src=\"https://example.invalid/icon.png\"></body></html>\n```" } }] });
   };
   const widget = await generateWidget("Create a shared poll");
   assert.equal(widget.title, "Team Poll");
+  assert.equal(widget.size, "small");
   assert.match(widget.html, /^<!DOCTYPE html>/);
   const { parseModelOutput } = await import("../src/lib/widget-protocol/generation-contract");
   const fragment = parseModelOutput("<main>Small generated tool</main>");
   assert.equal(fragment.ok, true);
-  if (fragment.ok) assert.match(fragment.widget.html, /^<!DOCTYPE html><html><head>[\s\S]*<body>[\s\S]*<\/body><\/html>$/);
+  if (fragment.ok) {
+    assert.match(fragment.widget.html, /^<!DOCTYPE html><html><head>[\s\S]*<body>[\s\S]*<\/body><\/html>$/);
+    assert.equal(fragment.widget.size, "medium");
+    assert.match(fragment.warnings.join(" "), /defaulted to medium/i);
+  }
   assert.deepEqual(sent[0]?.messages, buildGenerationMessages({ prompt: "Create a shared poll" }));
   assert.equal(sent[0]?.model, "local-test-model");
   assert.equal(sent[0]?.temperature, 0.2);
