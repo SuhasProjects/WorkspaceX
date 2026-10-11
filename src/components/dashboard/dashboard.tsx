@@ -133,7 +133,7 @@ export function Dashboard() {
         {workspace.role === "admin" && <ToolManageBar widget={activeWidget} position={widgets.findIndex((widget) => widget.id === activeWidget.id)} count={widgets.length} onMove={moveWidget} onDelete={removeWidget} onDeleted={() => setActiveTool(null)} />}
         <WidgetRenderer key={`${workspace.id}:${activeWidget.id}`} widgetId={activeWidget.id} workspaceId={workspace.id} html={activeWidget.html} theme={theme} title={activeWidget.title} className="tool-pane-frame" />
       </section> : <div className="dashboard-grid"><div className="workspace-content"><div className="overview-grid"><Calendar /><TodoList tasks={tasks} canEdit={workspace.role === "admin" && !taskBusy} onToggle={toggleTask} /></div><TaskBoard tasks={tasks} canEdit={workspace.role === "admin"} busy={taskBusy} message={taskMessage} onCreate={createTask} onStatus={(id, status) => void updateTaskStatus(id, status)} onDelete={(id) => void deleteTask(id)} />
-      </div><AIBuilderPanel isAdmin={workspace.role === "admin"} workspaceId={workspace.id} theme={theme} preview={preview} onGenerate={generate} onSave={save} onDiscard={() => setPreview(null)} /></div>}
+      </div>{workspace.role === "admin" && <AIBuilderPanel isAdmin workspaceId={workspace.id} theme={theme} preview={preview} onGenerate={generate} onSave={save} onDiscard={() => setPreview(null)} />}</div>}
       <footer className="dashboard-footer"><span>WorkspaceZero · Small software. Shared workspace.</span><span>AI tools, shared with your team</span></footer>
     </main>
   </div>;
