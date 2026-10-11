@@ -118,7 +118,7 @@ export function Dashboard() {
   }
 
   return <div className="dashboard-shell" data-theme={theme}><Atmosphere /><a className="skip-link" href="#main">Skip to workspace</a><WorkspaceHeader workspace={workspace} theme={theme} onTheme={toggleTheme} onLogout={logout} />
-    <main id="main" className="dashboard-main"><div className="workspace-intro"><div><h1>Workspace</h1></div></div>
+    <main id="main" className="dashboard-main"><div className="workspace-intro"><div><h1>{workspace.name}</h1></div></div>
       <section className="workspace-tabs" aria-label="Workspace pages">
         <nav className="workspace-tab-list">
           <Link href="/" aria-current="page">Dashboard</Link>
