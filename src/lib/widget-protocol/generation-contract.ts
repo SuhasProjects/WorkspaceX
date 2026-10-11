@@ -81,6 +81,7 @@ export function parseModelOutput(raw: string): ParseModelOutputResult {
   if (!/<(html|body|div|main|script)[\s>]/i.test(html)) {
     return { ok: false, error: "The model did not return an HTML document." };
   }
+  if (!/^<!DOCTYPE html/i.test(html)) html = "<!DOCTYPE html>\n" + html;
   if (new TextEncoder().encode(html).length > LIMITS.maxWidgetHtmlBytes) {
     return { ok: false, error: "The generated widget is too large." };
   }
