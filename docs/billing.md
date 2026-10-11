@@ -8,7 +8,7 @@ exact steps to connect the AWS monetization service.
 
 | | Free | Pro | Team |
 | --- | --- | --- | --- |
-| Price | $0/mo | $12/mo | $50/mo for 10 members, +$25/mo per extra member |
+| Price | $0/mo | $12/mo | $50/mo for 10 members, +$25/mo per additional 10 members |
 | AI generations / month | 3 | 20 | 100 |
 | Active tools | 3 | Unlimited | Unlimited |
 | Team members | 1 | 1 | Unlimited |

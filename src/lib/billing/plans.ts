@@ -6,8 +6,9 @@ export interface PlanDefinition {
   id: Plan;
   name: string;
   priceMonthly: number;
-  /** Team plan: seats covered by the base price and the monthly price of each extra seat. */
+  /** Team plan: seats covered by the base price, then extraMemberPrice per block of extraMemberBlock seats. */
   includedMembers?: number;
+  extraMemberBlock?: number;
   extraMemberPrice?: number;
   tagline: string;
   /** Active tools; null means unlimited. Enforced server-side. */
@@ -27,7 +28,7 @@ export const PLANS: PlanDefinition[] = [
   { id: "pro", name: "Pro", priceMonthly: 12, tagline: "For individuals who build a lot.",
     widgetLimit: null, generationLimit: 20, memberLimit: 1, workspaceLimit: 3,
     features: { aiEdit: true, sharedWidgets: false, memberRole: false } },
-  { id: "team", name: "Team", priceMonthly: 50, includedMembers: 10, extraMemberPrice: 25, tagline: "For teams that run on tools.",
+  { id: "team", name: "Team", priceMonthly: 50, includedMembers: 10, extraMemberBlock: 10, extraMemberPrice: 25, tagline: "For teams that run on tools.",
     widgetLimit: null, generationLimit: 100, memberLimit: null, workspaceLimit: null,
     features: { aiEdit: true, sharedWidgets: true, memberRole: true } },
 ];
@@ -47,7 +48,7 @@ export const PLAN_ROWS: { label: string; value: (plan: PlanDefinition) => string
 /** "$50/mo for 10 members, +$25/mo each extra" style label. */
 export function priceLabel(plan: PlanDefinition): string {
   if (plan.includedMembers && plan.extraMemberPrice) {
-    return `$${plan.priceMonthly}/mo for ${plan.includedMembers} members, +$${plan.extraMemberPrice}/mo per extra member`;
+    return `$${plan.priceMonthly}/mo for ${plan.includedMembers} members, +$${plan.extraMemberPrice}/mo per additional ${plan.extraMemberBlock ?? 1} members`;
   }
   return `$${plan.priceMonthly}/mo`;
 }
@@ -55,7 +56,8 @@ export function priceLabel(plan: PlanDefinition): string {
 /** Monthly price for a given seat count; non-seat plans ignore the count. */
 export function monthlyPriceFor(plan: PlanDefinition, members = 1): number {
   if (!plan.includedMembers || !plan.extraMemberPrice) return plan.priceMonthly;
-  return plan.priceMonthly + Math.max(0, members - plan.includedMembers) * plan.extraMemberPrice;
+  const extraBlocks = Math.ceil(Math.max(0, members - plan.includedMembers) / (plan.extraMemberBlock ?? 1));
+  return plan.priceMonthly + extraBlocks * plan.extraMemberPrice;
 }
 
 export function planDefinition(plan: Plan): PlanDefinition {
