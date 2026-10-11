@@ -38,9 +38,25 @@ computes the charge, and the checkout call must send the seat count to the
 billing service once accounts make it countable. Until then checkout uses the
 10-member base price.
 
+## Ownership
+
+Subscriptions and generation usage belong to the paying **user account**
+(`users.subscription`, `users.generationUsage`), not to a workspace. A
+workspace's effective plan is its owner's active plan. Consequences:
+
+- Free accounts own one workspace, Pro three, Team unlimited. Joined
+  workspaces never count against the allowance.
+- Only workspaces owned by an active Team subscriber may invite members.
+- Team seats are the unique accepted users across every workspace the
+  subscriber owns, counting the owner once. Pending invitations do not count.
+- Generations triggered by an invited admin are charged to the owner's quota.
+- Widget limits apply to each owned workspace independently.
+- Checkout metadata carries `userId` (and `seats` for Team); webhooks update
+  the user record.
+
 ## Data model
 
-`workspaces` documents gain an optional `subscription` field:
+`users` documents carry the optional `subscription` field:
 
 ```
 subscription: {
@@ -51,7 +67,7 @@ subscription: {
 }
 ```
 
-A workspace with no `subscription` is Free. The plan a workspace is *entitled
+An account with no `subscription` is Free. The plan a workspace is *entitled
 to* is computed by `effectivePlan()`: a paid plan counts only while `status`
 is `"active"`. Pending, past-due, and canceled subscriptions fall back to Free
 limits automatically; nothing has to run on a timer.
@@ -129,3 +145,18 @@ Routes that use the boundary:
 - A valid `activated` event sets `active`; the 4th tool now saves.
 - A duplicate event is ignored; a `canceled` event drops the limit back to 3.
 - Members cannot call `/api/billing/checkout` (403).
+
+## Operations: resetting application data
+
+Accounts replaced the old shared-password model; legacy records are not migrated.
+To clear every WorkspaceZero collection and recreate indexes, run, deliberately,
+in the intended environment:
+
+```
+RESET_CONFIRM=yes npm run db:reset
+```
+
+The script prints the database name and the collections it will drop first. If
+the target looks like production (database name containing prod/live/main, or a
+production NODE_ENV/VERCEL_ENV), it also requires `RESET_PRODUCTION_CONFIRM=yes`.
+It never logs credentials and is never run by startup, build, tests, or deploys.

@@ -11,7 +11,9 @@
     "verify:db": "node --conditions=react-server --import tsx scripts/verify-db.ts",
     "verify:luminal-contract": "node --conditions=react-server --import tsx scripts/verify-luminal-contract.ts",
     "verify:luminal-live": "node --conditions=react-server --import tsx scripts/verify-luminal-live.ts",
-    "verify:api": "node --conditions=react-server --import tsx scripts/verify-api.ts"
+    "verify:api": "node --conditions=react-server --import tsx scripts/verify-api.ts",
+    "db:reset": "node --conditions=react-server --import tsx scripts/reset-db.ts",
+    "verify:accounts": "node --import tsx scripts/verify-accounts.ts"
   },
   "engines": {
     "node": ">=24 <25"

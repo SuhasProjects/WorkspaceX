@@ -12,10 +12,22 @@ hashes never cross it. Responses containing workspace data must not be cached.
 
 | Method and path | Input | Contents of `data` | Permission | Success |
 | --- | --- | --- | --- | --- |
-| POST /api/workspaces | name, optional workspaceId, adminPassword, memberPassword | `{ workspace: Workspace }` | Public | 201 |
-| POST /api/auth/login | workspaceId, password | `{ workspace: Workspace }` | Public | 200 |
+| POST /api/auth/register | username, password, workspaceName | `{ account, workspace }` | Public | 201 |
+| POST /api/auth/login | username, password | `{ account, workspace }` (workspace may be null) | Public | 200 |
+| GET /api/account | None | `{ account }` | Signed in | 200 |
+| GET /api/workspaces | None | `{ workspaces }` owned or joined | Signed in | 200 |
+| POST /api/workspaces | name, optional workspaceId | `{ workspace }` (becomes active; owner plan limit enforced) | Signed in | 201 |
+| POST /api/workspaces/[id]/select | None | `{ workspace }` | Member of [id] | 200 |
+| GET /api/workspaces/[id]/members | None | `{ members, invitations }` (invitations for owner/admin) | Member | 200 |
+| POST /api/workspaces/[id]/invitations | username, role (admin or member) | `{ invitation }` | Owner/admin; owner on Team plan | 201 |
+| DELETE /api/workspaces/[id]/invitations/[inviteId] | None | `{ success: true }` | Owner/admin | 200 |
+| PATCH /api/workspaces/[id]/members/[userId] | role (admin or member) | `{ success: true }` | Owner | 200 |
+| DELETE /api/workspaces/[id]/members/[userId] | None | `{ success: true }` | Owner; admins may remove members only | 200 |
+| GET /api/invitations | None | `{ invitations }` pending for the signed-in user | Signed in | 200 |
+| POST /api/invitations/[id]/accept | None | `{ workspace }` | Invited user | 200 |
+| POST /api/invitations/[id]/decline | None | `{ success: true }` | Invited user | 200 |
 | POST /api/auth/logout | None | `{ success: true }` | Idempotent, including logged out | 200 |
-| GET /api/workspaces/current | None | `{ workspace: Workspace }` | Admin/member | 200 |
+| GET /api/workspaces/current | None | `{ workspace }` with current role and owner plan; 409 NO_ACTIVE_WORKSPACE when none is selected | Signed in | 200 |
 | GET /api/tasks | None | `{ tasks: Task[] }` | Admin/member | 200 |
 | POST /api/tasks | title, optional description, dueDate, dueTime, and status (default todo) | `{ task: Task }` | Admin/member | 201 |
 | PATCH /api/tasks/[id] | At least one of title, description, dueDate, dueTime, or status | `{ task: Task }` | Admin (members: status only) | 200 |
@@ -29,9 +41,15 @@ hashes never cross it. Responses containing workspace data must not be cached.
 | PUT /api/storage | widgetId, key, value | `{ success: true }` | Admin/member, registered widget | 200 |
 | GET /api/health | None | `{ status: "ok", service: "workspacezero" }` | Public | 200 |
 
-Creation establishes an admin session. Login infers role from the password; admin
-and member passwords must differ. Workspace and role come from a verified session
-on subsequent requests, never client-selected workspace fields. Cookies must be
+Accounts are individual username/password logins (no email, no recovery yet).
+Usernames are case-insensitive and unique; passwords are 12–128 characters and
+never trimmed. The session cookie carries `{ userId, activeWorkspaceId? }`; the
+current role is read from the membership record on every request, so removals
+and role changes apply immediately. Roles are owner (one per workspace), admin,
+and member. Owners and admins manage widgets, task content, and invitations;
+members view everything, add tasks, and change task status. Only owners change
+roles, remove admins, or hold billing. Plan entitlements belong to the owner's
+account and apply to every workspace that account owns. Cookies must be
 HTTP-only, SameSite=Lax, Secure in production, and expiring. Mutation endpoints
 must validate same-origin requests in addition to session/role checks.
 
