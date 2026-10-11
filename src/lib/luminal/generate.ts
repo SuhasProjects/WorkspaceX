@@ -52,29 +52,38 @@ export async function generateWidget(prompt: string): Promise<GeneratedWidget> {
     throw new GenerationError("INVALID_INPUT", "Prompt must contain 1 to 4,000 characters.");
   }
   const { apiKey, model, endpoint } = providerConfig();
-  let response: Response;
-  try {
-    response = await fetch(endpoint, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
-      body: JSON.stringify({
-        model,
-        messages: [
-          { role: "system", content: WIDGET_SYSTEM_PROMPT },
-          { role: "user", content: prompt.trim() },
-        ],
-        max_tokens: 7_000,
-      }),
-      cache: "no-store",
-      signal: AbortSignal.timeout(TIMEOUT_MS),
-    });
-  } catch (error) {
-    if (error instanceof Error && (error.name === "TimeoutError" || error.name === "AbortError")) {
-      throw new GenerationError("GENERATION_TIMEOUT", "Widget generation timed out.");
+  const messages = [
+    { role: "system", content: WIDGET_SYSTEM_PROMPT },
+    { role: "user", content: prompt.trim() },
+  ];
+  let response: Response | undefined;
+  for (const maxTokens of [3_500, 2_200]) {
+    try {
+      response = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
+        body: JSON.stringify({
+          model,
+          messages,
+          max_tokens: maxTokens,
+          thinking: { type: "disabled" },
+        }),
+        cache: "no-store",
+        signal: AbortSignal.timeout(TIMEOUT_MS),
+      });
+    } catch (error) {
+      if (error instanceof Error && (error.name === "TimeoutError" || error.name === "AbortError")) {
+        throw new GenerationError("GENERATION_TIMEOUT", "Widget generation timed out.");
+      }
+      throw new GenerationError("SERVICE_UNAVAILABLE", "Luminal could not be reached.");
     }
-    throw new GenerationError("SERVICE_UNAVAILABLE", "Luminal could not be reached.");
+    if (response.status !== 503) break;
   }
+  if (!response) throw new GenerationError("SERVICE_UNAVAILABLE", "Luminal could not be reached.");
   if (response.status === 429) throw new GenerationError("RATE_LIMITED", "Luminal is busy. Try again shortly.", response.status);
+  if (response.status === 503) {
+    throw new GenerationError("SERVICE_UNAVAILABLE", "Luminal is temporarily unavailable. Try again shortly.", response.status);
+  }
   if (!response.ok) throw new GenerationError("GENERATION_FAILED", "Luminal could not generate a widget.", response.status);
 
   let completion: ChatCompletion;
