@@ -1,19 +1,35 @@
 const WAVE_COUNT = 17;
 const WAVE_SPACING = 24;
+const WAVE_PERIOD = 800;
+const TILE_WIDTH = 1600;
+const WAVE_SAMPLES = 320;
 
-function waveContour(baseline: number, amplitude: number) {
-  return `M 0 ${baseline} C 100 ${baseline + amplitude}, 300 ${baseline + amplitude}, 400 ${baseline} C 500 ${baseline - amplitude}, 700 ${baseline - amplitude}, 800 ${baseline} C 900 ${baseline + amplitude}, 1100 ${baseline + amplitude}, 1200 ${baseline} C 1300 ${baseline - amplitude}, 1500 ${baseline - amplitude}, 1600 ${baseline}`;
+function wavePoints(index: number, center: number, reverse = false) {
+  const points = Array.from({ length: WAVE_SAMPLES + 1 }, (_, sample) => {
+    const x = (sample / WAVE_SAMPLES) * TILE_WIDTH;
+    const spacingScale = 0.9 - 0.25 * Math.cos((2 * Math.PI * x) / TILE_WIDTH);
+    const phase = (2 * Math.PI * x) / WAVE_PERIOD;
+    const baseline = 120 + index * WAVE_SPACING;
+    const y = 120 + center * WAVE_SPACING + (baseline - (120 + center * WAVE_SPACING)) * spacingScale + 36 * spacingScale * Math.sin(phase);
+    return `${x.toFixed(1)} ${y.toFixed(2)}`;
+  });
+
+  return reverse ? points.reverse() : points;
 }
 
-function waveBand(upper: number, upperAmplitude: number, lower: number, lowerAmplitude: number) {
-  return `${waveContour(upper, upperAmplitude)} L 1600 ${lower} C 1500 ${lower - lowerAmplitude}, 1300 ${lower - lowerAmplitude}, 1200 ${lower} C 1100 ${lower + lowerAmplitude}, 900 ${lower + lowerAmplitude}, 800 ${lower} C 700 ${lower - lowerAmplitude}, 500 ${lower - lowerAmplitude}, 400 ${lower} C 300 ${lower + lowerAmplitude}, 100 ${lower + lowerAmplitude}, 0 ${lower} Z`;
+function waveContour(index: number, center: number) {
+  return `M ${wavePoints(index, center).join(" L ")}`;
+}
+
+function waveBand(upper: number, lower: number, center: number) {
+  return `M ${wavePoints(upper, center).join(" L ")} L ${wavePoints(lower, center, true).join(" L ")} Z`;
 }
 
 /** Stacked, seamless wave contours for the dashboard background. */
 export function Atmosphere() {
+  const center = (WAVE_COUNT - 1) / 2;
   const waves = Array.from({ length: WAVE_COUNT }, (_, index) => ({
-    baseline: 120 + index * WAVE_SPACING,
-    amplitude: 36,
+    index,
   }));
 
   return (
@@ -26,7 +42,7 @@ export function Atmosphere() {
                 {waves.slice(0, -1).map((wave, index) => (
                   <path
                     key={`band-${index}`}
-                    d={waveBand(wave.baseline, wave.amplitude, waves[index + 1].baseline, waves[index + 1].amplitude)}
+                    d={waveBand(wave.index, waves[index + 1].index, center)}
                     fill="currentColor"
                     fillOpacity=".28"
                   />
@@ -34,7 +50,7 @@ export function Atmosphere() {
                 {waves.map((wave, index) => (
                   <path
                     key={`line-${index}`}
-                    d={waveContour(wave.baseline, wave.amplitude)}
+                    d={waveContour(wave.index, center)}
                     fill="none"
                     stroke="currentColor"
                     strokeWidth="1.5"
