@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { WorkspaceAccess } from "@/components/auth/workspace-access";
 import { AIBuilderPanel } from "@/components/builder/ai-builder-panel";
 import { TaskBoard } from "@/components/tasks/task-board";
@@ -43,7 +42,6 @@ export function Dashboard() {
   const [preview, setPreview] = useState<GeneratedWidget | null>(null);
   const [builderOpen, setBuilderOpen] = useState(false);
   const theme = useWidgetTheme();
-  const router = useRouter();
   const { state, retry, reorderWidget, removeWidget, updateWidget, updateWidgetSize, updateWidgetSpan } = useWorkspaceWidgets();
   const [editingTool, setEditingTool] = useState<string | null>(null);
   const [orderError, setOrderError] = useState("");
@@ -87,8 +85,7 @@ export function Dashboard() {
     const data = await post<{ widget: Widget }>("/api/widgets", preview);
     setPreview(null);
     retry();
-    if (data.widget.size === "large") router.push(`/widgets/${encodeURIComponent(data.widget.id)}`);
-    else setActiveTool(WIDGET_GALLERY_ID);
+    setActiveTool(data.widget.size === "large" ? data.widget.id : WIDGET_GALLERY_ID);
   }
   async function logout() {
     await post<{ success: true }>("/api/auth/logout");
@@ -153,7 +150,8 @@ export function Dashboard() {
         <nav className="workspace-tab-list">
           <Link href="/" aria-current={!activeTool ? "page" : undefined} onClick={(event) => { event.preventDefault(); setActiveTool(null); }}>Dashboard</Link>
           <a href={`/?tool=${WIDGET_GALLERY_ID}`} aria-current={showingGallery ? "page" : undefined} onClick={(event) => { event.preventDefault(); setActiveTool(WIDGET_GALLERY_ID); }}>Widgets <span className="tab-count">{compactWidgets.length}</span></a>
-          {largeWidgets.map((widget) => <Link key={widget.id} href={`/widgets/${encodeURIComponent(widget.id)}`}
+          {largeWidgets.map((widget) => <Link key={widget.id} href={`/?tool=${encodeURIComponent(widget.id)}`}
+            onNavigate={(event) => { event.preventDefault(); setActiveTool(widget.id); }}
             aria-current={widget.id === activeTool ? "page" : undefined}
             className={`${dragging === widget.id ? "is-dragging" : ""} ${dropTarget === widget.id ? "is-drop-target" : ""}`}
             draggable={workspace.role === "admin"}
