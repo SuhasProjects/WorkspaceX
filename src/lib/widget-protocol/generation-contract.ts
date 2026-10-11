@@ -39,12 +39,68 @@ THEME
   --wz-background, --wz-surface, --wz-text, --wz-muted, --wz-border, --wz-accent, --wz-accent-text, --wz-danger, --wz-success
 - They update automatically when the user switches themes. Do not set your own page background color.
 
+STANDARD STRUCTURE (follow this shape so widgets are consistent and reliable)
+- <head>: <title>, one <style> block.
+- <body>: a root <main class="app"> with a heading, the main controls, and a status line for messages/errors.
+- One <script> at the end of <body>, organized as:
+    const KEYS = { ... };                    // storage keys used by this widget, defined once
+    let state = { ... };                     // in-memory copy of data
+    async function load() { ... }            // read storage (null → defaults), then render()
+    function render() { ... }                // rebuild the UI from state; the ONLY place that touches the DOM
+    async function act(...) { ... }          // user action: re-read shared data, change it, save, render()
+    load();
+- Use the root element width (width: 100%). Do not center the widget in a narrow column.
+- Show a loading message until load() finishes, and an error message in the status line if storage fails.
+
 QUALITY
 - The widget must work immediately with no setup. Make it clean, modern, and usable.
 - Never leave the user stuck: if a choice is remembered (for example a vote), always show a clear way to change it. Do not permanently disable controls.
 - Selecting an option must give immediate visual feedback (highlight, checkmark, or count update) before and after saving.
 - Attach event handlers with addEventListener or on* properties after the elements exist (place scripts at the end of <body>).
 - Keep the whole document under 100 KB.`;
+
+/**
+ * Appended to the system prompt when editing an existing widget. The current
+ * document travels in the user message built by buildGenerationMessages.
+ */
+export const WIDGET_EDIT_INSTRUCTIONS = `
+EDIT MODE
+You are modifying an existing widget, not creating a new one.
+- Apply only the requested change. Keep the layout, styling, wording, structure, and behavior of everything else exactly as it is.
+- Keep every storage key the same so data already saved by the team keeps working. Add new keys only if the change needs new data.
+- Keep the <title> unless the change is about the title.
+- Return the complete updated HTML document, following the same output format rules.`;
+
+export interface GenerationMessage {
+  role: "system" | "user";
+  content: string;
+}
+
+export interface GenerationInput {
+  /** What the admin asked for: a new widget description, or a change request in edit mode. */
+  prompt: string;
+  /** Existing widget HTML. When present, the model edits it instead of starting over. */
+  baseHtml?: string;
+}
+
+/** Builds the chat messages for Luminal. Backend passes these straight through. */
+export function buildGenerationMessages({ prompt, baseHtml }: GenerationInput): GenerationMessage[] {
+  const request = prompt.trim();
+  if (!baseHtml?.trim()) {
+    return [
+      { role: "system", content: WIDGET_SYSTEM_PROMPT },
+      { role: "user", content: request },
+    ];
+  }
+  return [
+    { role: "system", content: WIDGET_SYSTEM_PROMPT + "\n" + WIDGET_EDIT_INSTRUCTIONS },
+    {
+      role: "user",
+      content:
+        "CURRENT WIDGET:\n```html\n" + baseHtml.trim() + "\n```\n\nREQUESTED CHANGE:\n" + request,
+    },
+  ];
+}
 
 export interface ParsedWidget {
   title: string;
