@@ -1,8 +1,8 @@
-import { countWidgets, getWorkspace } from "@/lib/db/repository";
+import { countWidgets, getGenerationCount, getWorkspace } from "@/lib/db/repository";
 import { failure, HttpError, success } from "@/lib/auth/http";
 import { requireSession } from "@/lib/auth/session";
 import { getBillingProvider } from "@/lib/billing/provider";
-import { widgetLimitFor } from "@/lib/billing/plans";
+import { generationLimitFor, widgetLimitFor } from "@/lib/billing/plans";
 import type { BillingSummary } from "@/types/contracts";
 
 export const runtime = "nodejs";
@@ -17,6 +17,8 @@ export async function GET() {
       subscription: workspace.subscription,
       widgetLimit: widgetLimitFor(workspace.plan),
       widgetCount: await countWidgets(session.workspaceId),
+      generationLimit: generationLimitFor(workspace.plan),
+      generationCount: await getGenerationCount(session.workspaceId),
       checkoutAvailable: getBillingProvider().available,
     };
     return success(summary);

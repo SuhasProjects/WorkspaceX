@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import type { ApiResponse, BillingSummary, CheckoutResult, Plan } from "@/types/contracts";
-import { PLANS } from "@/lib/billing/plans";
+import { PLANS, PLAN_ROWS } from "@/lib/billing/plans";
 import { Atmosphere } from "@/components/dashboard/atmosphere";
 import { useWidgetTheme } from "@/components/dashboard/use-workspace-widgets";
 
@@ -51,7 +51,7 @@ export function PricingPage() {
         <p className="eyebrow"><span className="live-dot" />Plans</p>
         <h1>Small software, priced small.</h1>
         <p className="pricing-lede">Every plan includes the shared workspace, tasks, and AI-generated tools. Pick how many tools your team needs.</p>
-        {state.status === "ready" && <p className="pricing-usage">You are on the <strong>{PLANS.find((plan) => plan.id === current)?.name}</strong> plan · {state.billing.widgetCount} of {state.billing.widgetLimit ?? "unlimited"} tools used</p>}
+        {state.status === "ready" && <p className="pricing-usage">You are on the <strong>{PLANS.find((plan) => plan.id === current)?.name}</strong> plan · {state.billing.widgetCount} of {state.billing.widgetLimit ?? "unlimited"} tools · {state.billing.generationCount} of {state.billing.generationLimit} generations this month</p>}
         {state.status === "signed_out" && <p className="pricing-usage">Sign in to your workspace to change plans.</p>}
       </header>
       {notice && <p className="feedback error pricing-notice" role="alert">{notice}</p>}
@@ -63,8 +63,7 @@ export function PricingPage() {
             <span className="eyebrow">{plan.name}{isCurrent && <span className="pricing-badge">Current</span>}</span>
             <p className="pricing-price"><span className="pricing-amount">${plan.priceMonthly}</span><span className="pricing-period">/month</span></p>
             <p className="pricing-tagline">{plan.tagline}</p>
-            <p className="pricing-limit">{plan.widgetLimit === null ? "Unlimited tools" : `${plan.widgetLimit} tools`}</p>
-            <ul className="pricing-features">{plan.features.map((feature) => <li key={feature}>{feature}</li>)}</ul>
+            <p className="pricing-limit">{plan.generationLimit} AI generations / month · {plan.widgetLimit === null ? "unlimited" : plan.widgetLimit} tools</p>
             {plan.id === "free"
               ? <button type="button" className="pricing-button" disabled>{isCurrent ? "Your current plan" : "Included"}</button>
               : <button type="button" className={`pricing-button${highlighted ? " primary" : ""}`} disabled={isCurrent || busyPlan !== null || state.status !== "ready"} onClick={() => choose(plan.id)}>
@@ -73,6 +72,8 @@ export function PricingPage() {
           </section>;
         })}
       </div>
+      <div className="pricing-table-wrap"><table className="pricing-table"><thead><tr><th scope="col">Feature</th>{PLANS.map((plan) => <th key={plan.id} scope="col" className={current === plan.id ? "is-current" : undefined}>{plan.name}</th>)}</tr></thead>
+        <tbody>{PLAN_ROWS.map((row) => <tr key={row.label}><th scope="row">{row.label}</th>{PLANS.map((plan) => { const value = row.value(plan); return <td key={plan.id}>{value === true ? <span className="pricing-yes" aria-label="Included">✓</span> : value === false ? <span className="pricing-no" aria-label="Not included">✕</span> : value}</td>; })}</tr>)}</tbody></table></div>
       <p className="pricing-footnote">Paid plans activate only after payment is confirmed by our billing provider. Prices in USD; cancel any time.</p>
     </main>
   </div>;

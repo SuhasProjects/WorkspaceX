@@ -2,7 +2,7 @@ import "server-only";
 import { randomUUID } from "node:crypto";
 import { MongoServerError, type UpdateFilter } from "mongodb";
 import type { GeneratedWidget, JsonValue, Plan, Subscription, SubscriptionStatus, Task, TaskStatus, UpdateTaskRequest, Widget, WidgetSize, WidgetSpan } from "@/types/contracts";
-import { effectivePlan, widgetLimitFor } from "@/lib/billing/plans";
+import { effectivePlan, usageMonth, widgetLimitFor } from "@/lib/billing/plans";
 import { DatabaseError, getDatabase } from "./client";
 
 interface WorkspaceRecord {
@@ -15,6 +15,8 @@ interface WorkspaceRecord {
   widgetOrder?: string[];
   /** Absent means Free. Only the billing webhook path may set a paid, active subscription. */
   subscription?: { plan: Plan; status: SubscriptionStatus; externalId?: string; updatedAt: Date };
+  /** AI generations per calendar month, keyed "YYYY-MM". */
+  generationUsage?: Record<string, number>;
 }
 interface WidgetRecord {
   _id: string;
@@ -165,6 +167,19 @@ export async function getWorkspace(workspaceId: string): Promise<WorkspaceSummar
     { _id: workspaceId }, { projection: { _id: 1, name: 1, subscription: 1 } },
   );
   return record ? summarize(record) : null;
+}
+
+export async function getGenerationCount(workspaceId: string, month = usageMonth()): Promise<number> {
+  checkWorkspaceId(workspaceId);
+  const db = await getDatabase();
+  const record = await db.collection<WorkspaceRecord>("workspaces").findOne({ _id: workspaceId }, { projection: { generationUsage: 1 } });
+  return record?.generationUsage?.[month] ?? 0;
+}
+
+export async function recordGeneration(workspaceId: string, month = usageMonth()): Promise<void> {
+  checkWorkspaceId(workspaceId);
+  const db = await getDatabase();
+  await db.collection<WorkspaceRecord>("workspaces").updateOne({ _id: workspaceId }, { $inc: { [`generationUsage.${month}`]: 1 } });
 }
 
 export async function countWidgets(workspaceId: string): Promise<number> {

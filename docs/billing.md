@@ -6,14 +6,32 @@ exact steps to connect the AWS monetization service.
 
 ## Plans
 
-| Plan | Price | Tools |
-| --- | --- | --- |
-| Free | $0/month | 3 |
-| Pro | $5/month | 20 |
-| Team | $15/month | unlimited |
+| | Free | Pro | Team |
+| --- | --- | --- | --- |
+| Price | $0/mo | $5/mo | $15/mo |
+| AI generations / month | 3 | 20 | 100 |
+| Active tools | 3 | Unlimited | Unlimited |
+| Team members | 1 | 1 | Unlimited |
+| Workspaces | 1 | 3 | Unlimited |
+| Edit existing widgets with AI | Limited | ✓ | ✓ |
+| Shared team widgets | ✗ | ✗ | ✓ |
+| Workspace permissions | ✗ | ✗ | Admin + Member |
 
 Defined once in `src/lib/billing/plans.ts` (client-safe) and used by the pricing
-page, the dashboard usage line, and the server-side limit check.
+page, the dashboard usage line, and every server-side check.
+
+What is enforced today:
+
+- **Active tools** and **AI generations / month** are always enforced on the
+  server (`createWidget`, `POST /api/generate`). Generations are counted per
+  calendar month in `workspaces.generationUsage["YYYY-MM"]`; edits count too,
+  which is what "Limited" editing on Free means in practice.
+- **Shared team widgets** and **Workspace permissions (member logins)** are
+  enforced only when `BILLING_ENFORCE_FEATURES=true`, so the free demo
+  workspace keeps working until billing is live. When on, `/api/storage` and
+  member sign-in return `PLAN_FEATURE_REQUIRED` below Team.
+- **Team members** and **Workspaces** are display-only: the app has no user
+  accounts, so there is nothing to count yet.
 
 ## Data model
 

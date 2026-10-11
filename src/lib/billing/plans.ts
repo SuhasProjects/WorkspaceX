@@ -1,22 +1,44 @@
 import type { Plan, Subscription } from "@/types/contracts";
 
+export type PlanFeature = "aiEdit" | "sharedWidgets" | "memberRole";
+
 export interface PlanDefinition {
   id: Plan;
   name: string;
   priceMonthly: number;
-  /** null means unlimited. */
-  widgetLimit: number | null;
   tagline: string;
-  features: string[];
+  /** Active tools; null means unlimited. Enforced server-side. */
+  widgetLimit: number | null;
+  /** AI generations (new tools and edits) per calendar month. Enforced server-side. */
+  generationLimit: number;
+  /** Display only until accounts exist: the app cannot count people or workspaces per customer yet. */
+  memberLimit: number | null;
+  workspaceLimit: number | null;
+  features: Record<PlanFeature, boolean | "limited">;
 }
 
 export const PLANS: PlanDefinition[] = [
-  { id: "free", name: "Free", priceMonthly: 0, widgetLimit: 3, tagline: "For trying things out.",
-    features: ["3 AI-generated tools", "Shared workspace with tasks", "Admin and member roles", "Light and dark themes"] },
-  { id: "pro", name: "Pro", priceMonthly: 5, widgetLimit: 20, tagline: "For small teams that ship.",
-    features: ["20 AI-generated tools", "Everything in Free", "Edit tools with AI", "Priority generation"] },
-  { id: "team", name: "Team", priceMonthly: 15, widgetLimit: null, tagline: "For teams that run on tools.",
-    features: ["Unlimited tools", "Everything in Pro", "Style references across tools", "Early access to new features"] },
+  { id: "free", name: "Free", priceMonthly: 0, tagline: "For trying things out.",
+    widgetLimit: 3, generationLimit: 3, memberLimit: 1, workspaceLimit: 1,
+    features: { aiEdit: "limited", sharedWidgets: false, memberRole: false } },
+  { id: "pro", name: "Pro", priceMonthly: 5, tagline: "For individuals who build a lot.",
+    widgetLimit: null, generationLimit: 20, memberLimit: 1, workspaceLimit: 3,
+    features: { aiEdit: true, sharedWidgets: false, memberRole: false } },
+  { id: "team", name: "Team", priceMonthly: 15, tagline: "For teams that run on tools.",
+    widgetLimit: null, generationLimit: 100, memberLimit: null, workspaceLimit: null,
+    features: { aiEdit: true, sharedWidgets: true, memberRole: true } },
+];
+
+/** Rows of the comparison table on the pricing page, in display order. */
+export const PLAN_ROWS: { label: string; value: (plan: PlanDefinition) => string | boolean }[] = [
+  { label: "Price", value: (plan) => `$${plan.priceMonthly}/mo` },
+  { label: "AI generations / month", value: (plan) => String(plan.generationLimit) },
+  { label: "Active tools", value: (plan) => plan.widgetLimit === null ? "Unlimited" : String(plan.widgetLimit) },
+  { label: "Team members", value: (plan) => plan.memberLimit === null ? "Unlimited" : String(plan.memberLimit) },
+  { label: "Workspaces", value: (plan) => plan.workspaceLimit === null ? "Unlimited" : String(plan.workspaceLimit) },
+  { label: "Edit existing widgets with AI", value: (plan) => plan.features.aiEdit === "limited" ? "Limited" : plan.features.aiEdit },
+  { label: "Shared team widgets", value: (plan) => plan.features.sharedWidgets },
+  { label: "Workspace permissions", value: (plan) => plan.features.memberRole ? "Admin + Member" : false },
 ];
 
 export function planDefinition(plan: Plan): PlanDefinition {
@@ -31,4 +53,17 @@ export function effectivePlan(subscription: Pick<Subscription, "plan" | "status"
 
 export function widgetLimitFor(plan: Plan): number | null {
   return planDefinition(plan).widgetLimit;
+}
+
+export function generationLimitFor(plan: Plan): number {
+  return planDefinition(plan).generationLimit;
+}
+
+export function hasFeature(plan: Plan, feature: PlanFeature): boolean {
+  return planDefinition(plan).features[feature] !== false;
+}
+
+/** Calendar month key used for generation counting, e.g. "2026-10". */
+export function usageMonth(date = new Date()): string {
+  return `${date.getUTCFullYear()}-${String(date.getUTCMonth() + 1).padStart(2, "0")}`;
 }

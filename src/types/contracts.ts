@@ -23,6 +23,8 @@ export interface BillingSummary {
   subscription: Subscription;
   widgetLimit: number | null;
   widgetCount: number;
+  generationLimit: number;
+  generationCount: number;
   /** False while the billing provider is a placeholder. */
   checkoutAvailable: boolean;
 }

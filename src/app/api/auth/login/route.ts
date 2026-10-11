@@ -2,6 +2,7 @@ import { compare } from "bcryptjs";
 import { getWorkspaceCredentials } from "@/lib/db/repository";
 import { checkOrigin, failure, HttpError, onlyFields, readJsonObject, success } from "@/lib/auth/http";
 import { setSession } from "@/lib/auth/session";
+import { requireFeature } from "@/lib/billing/entitlements";
 
 export const runtime = "nodejs";
 export async function POST(request: Request) {
@@ -20,6 +21,7 @@ export async function POST(request: Request) {
       throw new HttpError(401, "UNAUTHENTICATED", "Workspace ID or password is incorrect.");
     }
     const role = admin ? "admin" as const : "member" as const;
+    if (role === "member") await requireFeature(record.id, "memberRole");
     await setSession({ workspaceId: record.id, role });
     return success({ workspace: { id: record.id, name: record.name, role } });
   } catch (error) { return failure(error); }

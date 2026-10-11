@@ -1,6 +1,7 @@
 import { checkOrigin, failure, onlyFields, readJsonObject, success, HttpError } from "@/lib/auth/http";
 import { requireSession } from "@/lib/auth/session";
-import { getWidget, listWidgets } from "@/lib/db/repository";
+import { getGenerationCount, getWidget, getWorkspace, listWidgets, recordGeneration } from "@/lib/db/repository";
+import { generationLimitFor } from "@/lib/billing/plans";
 import { generateWidget, GenerationError } from "@/lib/luminal/generate";
 
 export const runtime = "nodejs";
@@ -28,7 +29,17 @@ export async function POST(request: Request) {
         references = (await listWidgets(session.workspaceId)).slice(-2).map(({ title, html }) => ({ title, html }));
       }
     }
-    return success(await generateWidget(body.prompt, body.baseHtml, references));
+    // Monthly generation quota (new tools and edits both count), enforced per plan.
+    const workspace = await getWorkspace(session.workspaceId);
+    if (!workspace) throw new HttpError(404, "NOT_FOUND", "Workspace not found.");
+    const limit = generationLimitFor(workspace.plan);
+    const used = await getGenerationCount(session.workspaceId);
+    if (used >= limit) {
+      throw new HttpError(403, "GENERATION_LIMIT_REACHED", `The ${workspace.plan} plan allows ${limit} AI generations per month. Upgrade for more.`);
+    }
+    const generated = await generateWidget(body.prompt, body.baseHtml, references);
+    await recordGeneration(session.workspaceId);
+    return success(generated);
   } catch (error) {
     if (error instanceof GenerationError) {
       const status = { INVALID_INPUT: 400, SERVICE_UNAVAILABLE: 503, RATE_LIMITED: 429,
