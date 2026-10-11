@@ -1,6 +1,21 @@
-/** Lightweight decorative vector contours; no image requests. */
+"use client";
+
+import { LINE_COUNT, buildPathD, useContourDrift } from "./use-contour-drift";
+
+// A few lines, spread through the stack, rendered soft instead of crisp — reads as a diffuse
+// glowing wave core sitting among the sharper contour lines, without a video/canvas layer.
+const GLOW_LINES = new Set([2, 7, 12]);
+
+/** Lightweight decorative vector contours; drifts slowly via useContourDrift, static when prefers-reduced-motion is set. */
 export function Atmosphere() {
-  return <div className="atmosphere" aria-hidden="true"><svg viewBox="0 0 1600 1100" preserveAspectRatio="xMidYMin slice"><defs><linearGradient id="wave-surface" x1="0" y1="0" x2="0.8" y2="1"><stop stopColor="#363940" /><stop offset=".45" stopColor="#14161b" /><stop offset="1" stopColor="#090b0f" /></linearGradient></defs>
-    {Array.from({ length: 17 }, (_, index) => <path key={index} d={`M -200 ${70 + index * 24} C 200 ${-220 + index * 26}, 370 ${520 + index * 12}, 810 ${200 + index * 24} S 1370 ${40 + index * 31}, 1850 ${400 + index * 30} L 1850 1200 L -200 1200 Z`} fill="url(#wave-surface)" stroke="currentColor" strokeWidth="1" />)}
+  const setPathRef = useContourDrift();
+  return <div className="atmosphere" aria-hidden="true"><svg viewBox="0 0 1600 1100" preserveAspectRatio="xMidYMin slice"><defs>
+    <linearGradient id="wave-surface" x1="0" y1="0" x2="0.8" y2="1"><stop stopColor="#363940" /><stop offset=".45" stopColor="#14161b" /><stop offset="1" stopColor="#090b0f" /></linearGradient>
+    <filter id="wave-glow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="16" /></filter>
+  </defs>
+    {Array.from({ length: LINE_COUNT }, (_, index) => {
+      const glow = GLOW_LINES.has(index);
+      return <path key={index} ref={setPathRef(index)} d={buildPathD(index)} fill="url(#wave-surface)" stroke="currentColor" strokeWidth={glow ? 0 : 1} filter={glow ? "url(#wave-glow)" : undefined} opacity={glow ? 0.85 : 1} />;
+    })}
   </svg></div>;
 }
