@@ -485,3 +485,8 @@ body { font-family: var(--wz-font-body); }
 .pricing-table tbody tr:last-child th, .pricing-table tbody tr:last-child td { border-bottom: 0; }
 .pricing-yes { color: var(--wz-success); font-weight: 600; }
 .pricing-no { color: var(--wz-muted); }
+/* One text color throughout light mode, including component overrides. */
+[data-theme="light"], [data-theme="light"] * { color: #566376 !important; }
+[data-theme="light"] input::placeholder,
+[data-theme="light"] textarea::placeholder { color: #566376 !important; opacity: 1; }
+[data-theme="light"] :is(.pricing-button.primary, .task-create-toggle, .task-create-actions button[type="submit"]) { background: var(--hover); }

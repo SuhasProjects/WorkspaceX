@@ -28,8 +28,9 @@ const BASE_CSS = [
   // Saved widgets may reset body padding; keep the host inset consistent.
   "html body{padding:24px 28px!important;box-sizing:border-box!important}",
   "@media(max-width:480px){html body{padding:20px!important}}",
-  "html[data-theme=light] body{color:var(--wz-muted)!important}",
-  "html[data-theme=light] :where(h1,h2,h3,h4,h5,h6,p,label,button:not(.wz-btn-primary):not(.wz-btn-danger)){color:var(--wz-muted)!important}",
+  "html[data-theme=light] body,html[data-theme=light] body *{color:#566376!important}",
+  "html[data-theme=light] input::placeholder,html[data-theme=light] textarea::placeholder{color:#566376!important;opacity:1}",
+  "html[data-theme=light] .wz-btn-primary{background:var(--wz-hover)!important}",
   // Transparent page: the dashboard's own background shows through the frame.
   ":where(html,body){margin:0;background:transparent}",
   ":where(body){color:var(--wz-text);padding:24px 28px;box-sizing:border-box;",
