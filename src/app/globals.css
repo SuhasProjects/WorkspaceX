@@ -57,8 +57,8 @@
 [data-theme="light"] {
   --wz-background: #eceff3;
   --wz-surface: #ffffff;
-  --wz-text: #202b3d;
-  --wz-muted: #303b4b;
+  --wz-text: #141c28;
+  --wz-muted: #141c28;
   --wz-accent: #39577f;
   --wz-accent-text: #ffffff;
   --wz-danger: #a53644;
@@ -508,9 +508,9 @@ body { font-family: var(--wz-font-body); }
 .pricing-yes { color: var(--wz-success); font-weight: 600; }
 .pricing-no { color: var(--wz-muted); }
 /* One text color throughout light mode, including component overrides. */
-[data-theme="light"], [data-theme="light"] * { color: #303b4b !important; }
+[data-theme="light"], [data-theme="light"] * { color: var(--wz-text) !important; }
 [data-theme="light"] input::placeholder,
-[data-theme="light"] textarea::placeholder { color: #303b4b !important; opacity: 1; }
+[data-theme="light"] textarea::placeholder { color: var(--wz-text) !important; opacity: 1; }
 [data-theme="light"] .workspace-tab-action { font-weight: 500; }
 [data-theme="light"] :is(.pricing-button.primary, .task-create-toggle, .task-create-actions button[type="submit"]) { background: var(--hover); }
 .pricing-seats { font-size: 12px; color: var(--wz-muted); margin-top: -4px; }
