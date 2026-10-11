@@ -33,7 +33,7 @@ export function TaskBoard({ tasks, canEdit, busy, message, onCreate, onStatus, o
   }
 
   return <section className="section-block" aria-labelledby="tasks-heading">
-    <div className="section-heading"><div><h2 id="tasks-heading">Team tasks <span className="count-badge">{tasks.length}</span></h2><p>A little structure for your next big idea.</p></div><span className="section-note">Shared with your team</span></div>
+    <div className="section-heading"><div><h2 id="tasks-heading">Team tasks <span className="count-badge">{tasks.length}</span></h2></div><span className="section-note">Shared with your team</span></div>
     {canEdit && <form className="task-create" onSubmit={submit}>
       <input value={title} onChange={(event) => setTitle(event.target.value)} maxLength={120} required placeholder="Add a task" aria-label="Task title" />
       <input value={description} onChange={(event) => setDescription(event.target.value)} maxLength={2000} placeholder="Optional details" aria-label="Task description" />
