@@ -13,7 +13,12 @@ export const TOKEN_NAMES = [
   "--wz-success",
   "--wz-font",
   "--wz-font-display",
+  "--wz-heading-weight",
+  "--wz-heading-spacing",
   "--wz-radius",
+  "--wz-inset",
+  "--wz-hover",
+  "--wz-glass",
 ] as const;
 
 export type ThemeTokens = Record<string, string>;
@@ -21,7 +26,9 @@ export type ThemeTokens = Record<string, string>;
 const SHARED_DEFAULTS: ThemeTokens = {
   "--wz-font": "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
   "--wz-font-display": "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
-  "--wz-radius": "4px",
+  "--wz-heading-weight": "400",
+  "--wz-heading-spacing": "0",
+  "--wz-radius": "3px",
 };
 
 /** Fallback palette, mirroring src/app/globals.css at the time of writing. */
@@ -37,6 +44,9 @@ export const THEME_TOKENS: Record<WidgetTheme, ThemeTokens> = {
     "--wz-accent-text": "#ffffff",
     "--wz-danger": "#a53644",
     "--wz-success": "#39785a",
+    "--wz-inset": "rgba(219, 227, 238, .46)",
+    "--wz-hover": "rgba(65, 91, 137, .07)",
+    "--wz-glass": "rgba(255, 255, 255, .7)",
   },
   dark: {
     ...SHARED_DEFAULTS,
@@ -49,6 +59,9 @@ export const THEME_TOKENS: Record<WidgetTheme, ThemeTokens> = {
     "--wz-accent-text": "#101216",
     "--wz-danger": "#ef9a9a",
     "--wz-success": "#7bc7a5",
+    "--wz-inset": "rgba(9, 12, 18, .35)",
+    "--wz-hover": "rgba(210, 225, 255, .08)",
+    "--wz-glass": "rgba(33, 38, 48, .62)",
   },
 };
 

@@ -34,15 +34,25 @@ Rules:
 - Use PERSONAL storage for individual preferences and private content (my notes, my filters, my display settings).
 - After writing shared data, re-render from the value you saved. To reduce lost updates, read the latest value immediately before modifying and saving it.
 
-LOOK AND FEEL (the widget must look like a native part of the host app)
-- Colors: use ONLY these CSS variables, never hard-coded colors or gradients:
-  --wz-background (page), --wz-surface (panels/cards), --wz-text, --wz-muted (secondary text), --wz-border, --wz-accent (primary buttons, highlights), --wz-accent-text (text on accent), --wz-danger, --wz-success
-- Fonts: body already uses var(--wz-font); headings already use var(--wz-font-display). Do not set other font families.
-- Corners: border-radius: var(--wz-radius). Borders: 1px solid var(--wz-border). Panels: background var(--wz-surface).
-- Flat and minimal: no drop shadows around the whole widget, no emojis, no icon fonts, no decorative illustrations. Simple inline SVG is fine for small icons.
-- Fill the full width of the page. Do not wrap everything in a centered card with a max-width. Do not set a page background.
-- Primary button: background var(--wz-accent); color var(--wz-accent-text). Secondary button: background var(--wz-surface); border 1px solid var(--wz-border); color var(--wz-text).
-- Text sizes: headings 16-20px, body 14px, secondary 12px. Spacing in multiples of 4px.
+LOOK AND FEEL (the widget must be indistinguishable from the host app's own panels)
+The host is a dark-first, minimal workspace: thin display-font headings, small uppercase section labels, flat panels with 1px borders, outline buttons, no fills, no shadows, no emojis. Pre-styled building blocks are already available; build the UI from them:
+- Page header:   <span class="wz-eyebrow">TEAM TOOL</span> <h1 class="wz-title">Name</h1> <p class="wz-subtitle">One line of purpose.</p>
+- Panel/card:    <section class="wz-panel"> … </section>   (group related controls; stack panels with 16px gaps)
+- Buttons:       <button class="wz-btn"> (default, outline) · <button class="wz-btn wz-btn-primary"> (the ONE main action) · <button class="wz-btn wz-btn-danger">
+- Fields:        <label class="wz-label">Label</label> <input class="wz-input"> (inputs, selects, textareas are pre-styled)
+- Layout:        <div class="wz-row"> for inline groups · <div class="wz-grid"> for responsive columns
+- Numbers:       <div class="wz-stat"><span class="wz-eyebrow">Raised</span><div class="wz-stat-value">$500</div></div>
+- Progress:      <div class="wz-bar"><span style="width:40%"></span></div>
+- Lists:         <ul class="wz-list"><li>…</li></ul>
+- Messages:      <p class="wz-status" id="status"></p>  (add class "error" for failures)
+- Text helpers:  class="wz-muted" (secondary text), class="wz-small" (12px)
+Rules:
+- Colors: ONLY these variables, never hard-coded colors or gradients: --wz-background, --wz-surface, --wz-inset (input/stat backgrounds), --wz-hover, --wz-text, --wz-muted, --wz-border, --wz-accent, --wz-accent-text, --wz-danger, --wz-success.
+- Fonts: never set font-family; body and headings are already correct. Headings h1/h2/h3 are pre-styled; do not change their weight.
+- Corners: var(--wz-radius) everywhere. Borders: 1px solid var(--wz-border). No box-shadow, no gradients, no emojis, no icon fonts, no background images. Small inline SVG icons are fine.
+- Fill the full page width. Do not wrap the widget in a centered max-width card. Do not set a page background or body padding.
+- Keep your own <style> short: layout tweaks only (widths, gaps, alignment), not a new visual language.
+- Text sizes: body 14px, secondary 12px, labels 10-12px uppercase via .wz-eyebrow. Spacing in multiples of 4px.
 - The variables update automatically when the user switches light/dark theme.
 
 STANDARD STRUCTURE (follow this shape so widgets are consistent and reliable)

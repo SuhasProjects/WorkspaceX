@@ -18,10 +18,21 @@ export function readHostTheme(element: Element): HostTheme {
     if (value) tokens[name] = value;
   }
   if (!tokens["--wz-font"] && computed.fontFamily) tokens["--wz-font"] = computed.fontFamily;
-  if (!tokens["--wz-font-display"]) {
-    const heading = element.ownerDocument.querySelector("h1, h2");
-    const family = heading ? getComputedStyle(heading).fontFamily : computed.fontFamily;
-    if (family) tokens["--wz-font-display"] = family;
+  const heading = element.ownerDocument.querySelector("h2, h1");
+  if (heading) {
+    const headingStyle = getComputedStyle(heading);
+    if (!tokens["--wz-font-display"] && headingStyle.fontFamily) tokens["--wz-font-display"] = headingStyle.fontFamily;
+    if (!tokens["--wz-heading-weight"] && headingStyle.fontWeight) tokens["--wz-heading-weight"] = headingStyle.fontWeight;
+    if (!tokens["--wz-heading-spacing"] && headingStyle.letterSpacing && headingStyle.letterSpacing !== "normal") {
+      tokens["--wz-heading-spacing"] = headingStyle.letterSpacing;
+    }
+  }
+  if (!tokens["--wz-font-display"] && computed.fontFamily) tokens["--wz-font-display"] = computed.fontFamily;
+  // The dashboard names its glass/inset/hover surfaces without the wz- prefix.
+  const aliases = [["--glass", "--wz-glass"], ["--inset", "--wz-inset"], ["--hover", "--wz-hover"]] as const;
+  for (const [hostName, tokenName] of aliases) {
+    const value = computed.getPropertyValue(hostName).trim();
+    if (value && !tokens[tokenName]) tokens[tokenName] = value;
   }
   if (!tokens["--wz-radius"]) {
     const button = element.ownerDocument.querySelector('button[type="submit"], button:not([class*="icon"])');
