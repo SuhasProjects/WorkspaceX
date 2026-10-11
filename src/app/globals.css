@@ -77,9 +77,9 @@ button, a, textarea, input, select { outline-offset: 4px; }
 svg { flex-shrink: 0; }
 .dashboard-shell { position: relative; isolation: isolate; min-height: 100vh; padding: 24px 32px 0; overflow: clip; }
 .atmosphere { position: absolute; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
-.atmosphere svg { position: absolute; top: -90px; right: -150px; width: max(120%, 1400px); height: 1100px; color: rgba(169, 184, 210, .09); opacity: .68; }
-.atmosphere::after { content: ""; position: absolute; inset: 0; background: radial-gradient(ellipse at 85% 9%, rgba(128, 154, 188, .15), transparent 42%), radial-gradient(ellipse at 4% 48%, rgba(103, 95, 139, .09), transparent 35%), linear-gradient(180deg, transparent, var(--wz-background) 85%); }
-[data-theme="light"] .atmosphere svg { opacity: .045; }
+.atmosphere svg { position: absolute; top: -90px; right: -150px; width: max(120%, 1400px); height: 1100px; color: rgba(169, 184, 210, .14); opacity: .82; }
+.atmosphere::after { content: ""; position: absolute; inset: 0; background: radial-gradient(ellipse at 85% 9%, rgba(128, 154, 188, .19), transparent 42%), radial-gradient(ellipse at 4% 48%, rgba(103, 95, 139, .09), transparent 35%), linear-gradient(180deg, transparent, var(--wz-background) 85%); }
+[data-theme="light"] .atmosphere svg { opacity: .3; }
 [data-theme="light"] .atmosphere::after { background: radial-gradient(ellipse at 80% 0%, #d5dfeccc, transparent 60%), linear-gradient(180deg, transparent, var(--wz-background) 85%); }
 .skip-link { position: fixed; top: -80px; left: 24px; padding: 12px 20px; background: var(--wz-surface); z-index: 30; border: 2px solid var(--wz-accent); border-radius: 3px; }
 .skip-link:focus { top: 12px; }
@@ -332,3 +332,12 @@ body { font-family: var(--wz-font-body); }
 /* ---- Builder: style reference picker ---- */
 .reference-pick { display: flex; align-items: center; gap: 10px; margin: 0 1px 14px; font-size: 11px; color: var(--wz-muted); }
 .reference-pick select { flex: 1; min-width: 0; padding: 7px 10px; background: var(--inset); border: 1px solid var(--wz-border); border-radius: 3px; color: var(--wz-text); font: inherit; font-size: 12px; }
+
+/* ---- Primary button: liquid-glass shine sweep ---- */
+.generate-button { position: relative; overflow: hidden; isolation: isolate; }
+.generate-button::after { content: ""; position: absolute; inset: -20% -40%; background: linear-gradient(115deg, transparent 35%, rgba(255, 255, 255, .65) 50%, transparent 65%); transform: translateX(-140%); transition: transform .6s ease; pointer-events: none; }
+.generate-button:not(:disabled):hover::after { transform: translateX(140%); }
+.generate-button:not(:disabled) { background: linear-gradient(180deg, #eef3fd, #dce5f5 55%, #c9d6ef); }
+.generate-button:not(:disabled):hover { background: linear-gradient(180deg, #f7faff, #eef3fd 55%, #d7e2f7); box-shadow: 0 9px 22px rgba(0, 0, 0, .2), 0 0 16px rgba(182, 200, 240, .25); }
+[data-theme="light"] .generate-button:not(:disabled) { background: linear-gradient(180deg, #3d5372, #2d3d55 55%, #22304a); }
+[data-theme="light"] .generate-button:not(:disabled):hover { background: linear-gradient(180deg, #4a6587, #3d5372 55%, #2d3d55); box-shadow: 0 9px 22px rgba(0, 0, 0, .18), 0 0 16px rgba(57, 87, 127, .3); }
