@@ -8,10 +8,12 @@ import type { GeneratedWidget, Theme } from "@/types/contracts";
 
 const examples = ["Build a shared team poll", "Create a launch countdown", "Make a meeting cost calculator", "Create a personal scratchpad"];
 
-export function AIBuilderPanel({ onGenerate, onSave, onDiscard, onToggle, isAdmin, expanded, workspaceId, theme, preview, referenceOptions = [] }: {
+export function AIBuilderPanel({ onGenerate, onSave, onDiscard, onToggle, isAdmin, expanded, workspaceId, theme, preview, referenceOptions = [], usage }: {
   onGenerate: (prompt: string, referenceId?: string) => Promise<void>;
   /** Saved tools the admin can pick as the style reference. */
   referenceOptions?: { id: string; title: string }[];
+  /** Tool usage against the workspace plan, shown under the builder. */
+  usage?: { count: number; limit: number | null; plan: string };
   onSave: () => Promise<void>;
   onDiscard: () => void;
   onToggle: () => void;
@@ -62,6 +64,7 @@ export function AIBuilderPanel({ onGenerate, onSave, onDiscard, onToggle, isAdmi
       <WidgetRenderer widgetId="unsaved-preview" workspaceId={workspaceId} html={preview.html} theme={theme} preview className="builder-preview-frame" />
       <div className="preview-actions"><button type="button" onClick={onDiscard}>Discard</button><button type="button" className="generate-button" disabled={busy} onClick={async () => { setBusy(true); setError(""); try { await onSave(); } catch (cause) { setError(cause instanceof Error ? cause.message : "Save failed."); } finally { setBusy(false); } }}>Save for team</button></div>
     </section>}
+    {usage && <p className="builder-usage">{usage.limit === null ? `${usage.count} tools · unlimited on your plan` : `${usage.count} of ${usage.limit} tools used on the ${usage.plan} plan`}{usage.limit !== null && usage.count >= usage.limit && <> · <a href="/pricing" className="text-link">Upgrade for more</a></>}</p>}
     <div className="builder-note" id="builder-mode"><span className="note-dot" /><p><strong>AI builder</strong>Generated tools stay private until you approve and save them.</p></div>
     </>}
   </aside>;

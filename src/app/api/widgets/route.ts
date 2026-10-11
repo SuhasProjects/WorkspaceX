@@ -25,6 +25,9 @@ export async function POST(request: Request) {
     if (error instanceof DatabaseError && error.code === "INVALID_INPUT") {
       return failure(new HttpError(400, "INVALID_INPUT", error.message));
     }
+    if (error instanceof DatabaseError && error.code === "PLAN_LIMIT_REACHED") {
+      return failure(new HttpError(403, "PLAN_LIMIT_REACHED", error.message));
+    }
     return failure(error);
   }
 }

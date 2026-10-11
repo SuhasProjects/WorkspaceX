@@ -12,6 +12,7 @@ import { TodoList } from "@/components/tasks/todo-list";
 import { WorkspaceHeader } from "./workspace-header";
 import { setWidgetTheme, useWidgetTheme, useWorkspaceWidgets } from "./use-workspace-widgets";
 import { Atmosphere } from "./atmosphere";
+import { widgetLimitFor } from "@/lib/billing/plans";
 import { ToolManageBar } from "./tool-manage-bar";
 import { ToolEditor } from "./tool-editor";
 import { WidgetRenderer } from "./widget-renderer-adapter";
@@ -82,7 +83,12 @@ export function Dashboard() {
   }
   async function save() {
     if (!preview) return;
-    const data = await post<{ widget: Widget }>("/api/widgets", preview);
+    let data: { widget: Widget };
+    try { data = await post<{ widget: Widget }>("/api/widgets", preview); }
+    catch (error) {
+      if (error instanceof Error && /allows \d+ tools/.test(error.message)) throw new Error(`${error.message} See /pricing for plans.`);
+      throw error;
+    }
     setPreview(null);
     retry();
     setActiveTool(data.widget.size === "large" ? data.widget.id : WIDGET_GALLERY_ID);
@@ -170,7 +176,7 @@ export function Dashboard() {
           ? <ToolEditor key={activeWidget.id} widget={activeWidget} workspaceId={workspace.id} theme={theme} onClose={() => setEditingTool(null)} onSaved={(saved) => { updateWidget(saved); setEditingTool(null); }} />
           : <WidgetRenderer key={`${workspace.id}:${activeWidget.id}:${activeWidget.html.length}`} widgetId={activeWidget.id} workspaceId={workspace.id} html={activeWidget.html} theme={theme} title={activeWidget.title} className="tool-pane-frame" />}
       </section> : showingGallery ? <WidgetGallery widgets={compactWidgets} workspaceId={workspace.id} theme={theme} isAdmin={workspace.role === "admin"} onSpan={updateWidgetSpan} onDelete={removeWidget} onDuplicate={duplicateWidget} onSize={changeWidgetSize} onUpdate={updateWidget} /> : <div className="dashboard-grid"><div className="workspace-content"><div className="overview-grid"><Calendar tasks={tasks} selectedDueDate={selectedDueDate} onSelectDueDate={setSelectedDueDate} /><TodoList tasks={tasks} canEdit={!taskBusy} selectedDueDate={selectedDueDate} onClearDate={() => setSelectedDueDate(null)} onToggle={toggleTask} /></div><TaskBoard tasks={tasks} canEdit={workspace.role === "admin"} canCreate canMove busy={taskBusy} message={taskMessage} onCreate={createTask} onUpdate={updateTask} onStatus={(id, status) => void updateTaskStatus(id, status)} onDelete={(id) => void deleteTask(id)} />
-      </div>{workspace.role === "admin" && <AIBuilderPanel isAdmin referenceOptions={widgets.map(({ id, title }) => ({ id, title }))} expanded={builderOpen} onToggle={() => setBuilderOpen((current) => !current)} workspaceId={workspace.id} theme={theme} preview={preview} onGenerate={generate} onSave={save} onDiscard={() => setPreview(null)} />}</div>}
+      </div>{workspace.role === "admin" && <AIBuilderPanel isAdmin usage={{ count: widgets.length, limit: widgetLimitFor(workspace.plan), plan: workspace.plan }} referenceOptions={widgets.map(({ id, title }) => ({ id, title }))} expanded={builderOpen} onToggle={() => setBuilderOpen((current) => !current)} workspaceId={workspace.id} theme={theme} preview={preview} onGenerate={generate} onSave={save} onDiscard={() => setPreview(null)} />}</div>}
       <footer className="dashboard-footer"><span>WorkspaceZero · Small software. Shared workspace.</span><span>AI tools, shared with your team</span></footer>
     </main>
   </div>;

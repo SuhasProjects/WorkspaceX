@@ -1,7 +1,8 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
 import { MongoServerError, type UpdateFilter } from "mongodb";
-import type { GeneratedWidget, JsonValue, Task, TaskStatus, UpdateTaskRequest, Widget, WidgetSize, WidgetSpan } from "@/types/contracts";
+import type { GeneratedWidget, JsonValue, Plan, Subscription, SubscriptionStatus, Task, TaskStatus, UpdateTaskRequest, Widget, WidgetSize, WidgetSpan } from "@/types/contracts";
+import { effectivePlan, widgetLimitFor } from "@/lib/billing/plans";
 import { DatabaseError, getDatabase } from "./client";
 
 interface WorkspaceRecord {
@@ -12,6 +13,8 @@ interface WorkspaceRecord {
   createdAt: Date;
   /** Admin-chosen tab order; widgets not listed follow in creation order. */
   widgetOrder?: string[];
+  /** Absent means Free. Only the billing webhook path may set a paid, active subscription. */
+  subscription?: { plan: Plan; status: SubscriptionStatus; externalId?: string; updatedAt: Date };
 }
 interface WidgetRecord {
   _id: string;
@@ -40,7 +43,20 @@ interface TaskRecord {
   createdAt: Date;
   updatedAt: Date;
 }
-export interface WorkspaceSummary { id: string; name: string }
+export interface WorkspaceSummary { id: string; name: string; plan: Plan; subscription: Subscription }
+
+const FREE_SUBSCRIPTION = (): Subscription => ({ plan: "free", status: "none", updatedAt: new Date(0).toISOString() });
+
+function publicSubscription(record: WorkspaceRecord): Subscription {
+  const sub = record.subscription;
+  if (!sub) return FREE_SUBSCRIPTION();
+  return { plan: sub.plan, status: sub.status, ...(sub.externalId ? { externalId: sub.externalId } : {}), updatedAt: sub.updatedAt.toISOString() };
+}
+
+function summarize(record: WorkspaceRecord): WorkspaceSummary {
+  const subscription = publicSubscription(record);
+  return { id: record._id, name: record.name, plan: effectivePlan(subscription), subscription };
+}
 export interface CreateWorkspaceRecord {
   id: string;
   name: string;
@@ -139,16 +155,40 @@ export async function createWorkspace(input: CreateWorkspaceRecord): Promise<Wor
     }
     throw error;
   }
-  return { id: input.id, name };
+  return { id: input.id, name, plan: "free", subscription: FREE_SUBSCRIPTION() };
 }
 
 export async function getWorkspace(workspaceId: string): Promise<WorkspaceSummary | null> {
   checkWorkspaceId(workspaceId);
   const db = await getDatabase();
   const record = await db.collection<WorkspaceRecord>("workspaces").findOne(
-    { _id: workspaceId }, { projection: { _id: 1, name: 1 } },
+    { _id: workspaceId }, { projection: { _id: 1, name: 1, subscription: 1 } },
   );
-  return record ? { id: record._id, name: record.name } : null;
+  return record ? summarize(record) : null;
+}
+
+export async function countWidgets(workspaceId: string): Promise<number> {
+  checkWorkspaceId(workspaceId);
+  const db = await getDatabase();
+  return db.collection<WidgetRecord>("widgets").countDocuments({ workspaceId });
+}
+
+/**
+ * Records a subscription change. Callers must only pass states confirmed by
+ * the billing provider (verified webhook) or a pending state from checkout.
+ */
+export async function setWorkspaceSubscription(
+  workspaceId: string,
+  input: { plan: Plan; status: SubscriptionStatus; externalId?: string },
+): Promise<WorkspaceSummary | null> {
+  checkWorkspaceId(workspaceId);
+  const db = await getDatabase();
+  const record = await db.collection<WorkspaceRecord>("workspaces").findOneAndUpdate(
+    { _id: workspaceId },
+    { $set: { subscription: { plan: input.plan, status: input.status, ...(input.externalId ? { externalId: input.externalId } : {}), updatedAt: new Date() } } },
+    { returnDocument: "after", projection: { _id: 1, name: 1, subscription: 1 } },
+  );
+  return record ? summarize(record) : null;
 }
 
 /** Server authentication code only. This object must never be an API response. */
@@ -180,7 +220,13 @@ export async function createWidget(workspaceId: string, input: GeneratedWidget):
   checkWorkspaceId(workspaceId);
   const title = checkedTitle(input.title);
   checkedHtml(input.html);
-  if (!(await getWorkspace(workspaceId))) throw new DatabaseError("NOT_FOUND", "Workspace not found.");
+  const workspace = await getWorkspace(workspaceId);
+  if (!workspace) throw new DatabaseError("NOT_FOUND", "Workspace not found.");
+  // Plan limits are enforced here, server-side, regardless of what the UI shows.
+  const limit = widgetLimitFor(workspace.plan);
+  if (limit !== null && (await countWidgets(workspaceId)) >= limit) {
+    throw new DatabaseError("PLAN_LIMIT_REACHED", `The ${workspace.plan} plan allows ${limit} tools. Upgrade to add more.`);
+  }
   const db = await getDatabase();
   const record: WidgetRecord = { _id: randomUUID(), workspaceId, title, html: input.html, size: checkedWidgetSize(input.size, "medium"), createdAt: new Date() };
   await db.collection<WidgetRecord>("widgets").insertOne(record);

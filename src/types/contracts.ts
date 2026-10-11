@@ -7,7 +7,27 @@ export type WidgetSize = "small" | "medium" | "large";
 export interface WidgetSpan { cols: number; rows: number }
 export type JsonValue = null | boolean | number | string | JsonValue[] | { [key: string]: JsonValue };
 
-export interface Workspace { id: string; name: string; role: Role }
+export type Plan = "free" | "pro" | "team";
+/** Lifecycle as reported by the billing provider. Only "active" unlocks a paid plan. */
+export type SubscriptionStatus = "none" | "pending" | "active" | "past_due" | "canceled";
+export interface Subscription {
+  plan: Plan;
+  status: SubscriptionStatus;
+  /** Provider-side subscription identifier; absent until checkout completes. */
+  externalId?: string;
+  updatedAt: string;
+}
+export interface Workspace { id: string; name: string; role: Role; plan: Plan; subscription: Subscription }
+export interface BillingSummary {
+  plan: Plan;
+  subscription: Subscription;
+  widgetLimit: number | null;
+  widgetCount: number;
+  /** False while the billing provider is a placeholder. */
+  checkoutAvailable: boolean;
+}
+export interface CheckoutRequest { plan: Exclude<Plan, "free"> }
+export interface CheckoutResult { url: string }
 export interface Task {
   id: string;
   title: string;
@@ -43,6 +63,8 @@ export interface SuccessResult { success: true }
 /** Values inside ApiResponse.data. Lists deliberately use named fields. */
 export interface ApiData {
   workspace: { workspace: Workspace };
+  billing: BillingSummary;
+  checkout: CheckoutResult;
   tasks: { tasks: Task[] };
   task: { task: Task };
   widgets: { widgets: Widget[] };
