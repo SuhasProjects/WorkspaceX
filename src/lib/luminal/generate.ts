@@ -10,7 +10,7 @@ export type GenerationErrorCode =
   | "GENERATION_TIMEOUT";
 
 export class GenerationError extends Error {
-  constructor(public readonly code: GenerationErrorCode, message: string) {
+  constructor(public readonly code: GenerationErrorCode, message: string, public readonly providerStatus?: number) {
     super(message);
     this.name = "GenerationError";
   }
@@ -74,8 +74,8 @@ export async function generateWidget(prompt: string): Promise<GeneratedWidget> {
     }
     throw new GenerationError("SERVICE_UNAVAILABLE", "Luminal could not be reached.");
   }
-  if (response.status === 429) throw new GenerationError("RATE_LIMITED", "Luminal is busy. Try again shortly.");
-  if (!response.ok) throw new GenerationError("GENERATION_FAILED", "Luminal could not generate a widget.");
+  if (response.status === 429) throw new GenerationError("RATE_LIMITED", "Luminal is busy. Try again shortly.", response.status);
+  if (!response.ok) throw new GenerationError("GENERATION_FAILED", "Luminal could not generate a widget.", response.status);
 
   let completion: ChatCompletion;
   try {

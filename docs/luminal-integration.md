@@ -9,11 +9,7 @@ returns exactly `{ title, html }`. Provider failures, timeouts, malformed output
 and missing configuration become sanitized error codes; provider response bodies
 and the API key are not sent to the browser.
 
-A focused mock check and TypeScript check passed. No live Luminal call has been
-made. `LUMINAL_BASE_URL` and `LUMINAL_MODEL` still need their exact dashboard
-values; neither has been guessed. Do not expose `/api/generate` until the admin
-session and role checks are implemented. Frontend may continue using mocks until
-that route is available.
+A focused mock check and TypeScript check passed. The real endpoint and model were supplied by the user and saved locally. Live generation returned provider HTTP 503, so successful generation remains unverified. `/api/generate` is implemented with admin session and role checks.
 
 Widget-engine milestone code is merged into `backend` for this integration, not
 into `main`. The frontend branch has not yet been published. The existing draft

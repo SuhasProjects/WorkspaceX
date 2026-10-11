@@ -11,22 +11,12 @@ The MongoDB driver manages a connection pool per client; the app reuses its
 client across requests/hot reloads. Reference:
 https://www.mongodb.com/docs/drivers/node/current/connect/connection-options/
 
-Local credentials are in ignored .env.local; database name is workspacezero.
-Luminal configuration is incomplete until the actual base URL/model are provided.
-No public business endpoints or shared-storage operations are enabled yet.
-API and renderer contracts are unchanged. Frontend/Engine keep using mocks.
-Root dependencies changed: teammates should run npm ci after integrating.
+Local credentials remain in ignored `.env.local`. Database name: `workspacezero`.
+After Atlas network access and database-user credentials were corrected, live
+verification passed: connection, indexes, scoped workspace/widget reads and
+writes, duplicate protection, widget-data cleanup, and test-record cleanup.
+TLS certificate verification remains enabled.
 
-Validation: TypeScript and lint passed. The live persistence verification was
-blocked by a TLS connection failure to Atlas. No database write was confirmed.
-Check Atlas Network Access for the current client IP, cluster availability, and
-local TLS/network configuration. TLS certificate verification is not disabled.
-
-To rerun after fixing access: npm run verify:db. It creates uniquely named
-verification records, checks persistence/workspace scoping/deletion, and removes
-only its own records. It never drops the database or prints credentials/raw
-provider errors. Do not interpret this script's existence as a successful test.
-
-Next: resolve Atlas access, confirm persistence, then proceed to the next major
-phase after human approval. Authentication/authorization must precede exposing
-persistence endpoints publicly.
+Authenticated workspace, widget, and storage endpoints now pass a focused live
+API check. See `docs/backend-core.md`. The widget engine can use the real
+`/api/storage` endpoint.

@@ -1,8 +1,7 @@
 # WorkspaceZero API contracts — foundation proposal
 
 Backend owns `src/types/contracts.ts`. Frontend and Widget Engine must review this
-proposal before implementing dependent integrations. No business endpoint below
-is implemented in the foundation; only `/api/health` is available.
+proposal before implementing dependent integrations. Workspace, auth, widget, generation, and storage endpoints are implemented. Task endpoints remain pending.
 
 All requests use same-origin URLs. JSON bodies require `Content-Type: application/json`.
 Success has `{ data: ... }`; failure has `{ error: { code, message } }`.
@@ -37,10 +36,8 @@ must validate same-origin requests in addition to session/role checks.
 
 ## Validation defaults to implement
 
-All limits below are proposed defaults, not protections already implemented.
-Unknown input fields are rejected. JSON bodies are limited to 16 KiB except widget
-saves (256 KiB). Stored JSON values are limited to 16 KiB encoded as UTF-8, with
-finite numbers and maximum nesting depth 20. HTML is limited to 200 KiB UTF-8;
+Implemented endpoints enforce these limits; task endpoints remain pending.
+Unknown input fields are rejected. JSON bodies are limited to 16 KiB except widget saves (256 KiB) and storage writes (70 KiB). Stored JSON values are limited to 64 KiB encoded as UTF-8, with finite numbers and maximum nesting depth 32. Saved HTML is limited to 200 KiB UTF-8; generated HTML is limited to 100 KiB;
 the complete JSON save body must still fit the 256 KiB limit.
 
 Names/titles: trimmed, 1–120 characters. Workspace IDs: 3–64 lowercase ASCII
