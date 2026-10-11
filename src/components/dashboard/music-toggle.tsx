@@ -33,7 +33,7 @@ export function MusicToggle() {
     setMuted(false);
   }
 
-  const label = !playing ? "Play music" : muted ? "Unmute music" : "Mute music";
+  const label = !playing ? "Play YouTube music" : muted ? "Unmute YouTube music" : "Mute YouTube music";
 
   return <div className="music-control">
     <button type="button" className="icon-button music-toggle" aria-label={label} title={label} aria-pressed={playing && !muted} onClick={toggleMusic}>
