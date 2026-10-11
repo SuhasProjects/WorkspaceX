@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import type { ApiData, ApiResponse, Theme, Widget, Workspace } from "@/types/contracts";
 import { mockWorkspace, readPreviewWidgets } from "./mock-data";
 
@@ -26,11 +26,11 @@ async function request<T>(url: string, signal: AbortSignal): Promise<T> {
 
 // Both the dashboard and dedicated page load the same saved Widget records.
 export function useWorkspaceWidgets(preview = false) {
+  const previewWidgets = usePreviewWidgets();
   const [state, setState] = useState<WorkspaceState>({ status: "loading" });
   const [revision, setRevision] = useState(0);
   useEffect(() => {
     if (preview) {
-      setState({ status: "ready", workspace: mockWorkspace, widgets: readPreviewWidgets() });
       return;
     }
     const controller = new AbortController();
@@ -49,20 +49,44 @@ export function useWorkspaceWidgets(preview = false) {
     return () => controller.abort();
   }, [revision, preview]);
   function retry() { setState({ status: "loading" }); setRevision((value) => value + 1); }
-  return { state, retry };
+  const resolvedState: WorkspaceState = preview ? { status: "ready", workspace: mockWorkspace, widgets: previewWidgets } : state;
+  return { state: resolvedState, retry };
 }
 
+function previewSnapshot(): string | null {
+  try { return sessionStorage.getItem("workspacezero.preview-widgets"); } catch { return null; }
+}
+function subscribePreview(callback: () => void) {
+  window.addEventListener("workspacezero:preview", callback);
+  window.addEventListener("storage", callback);
+  return () => { window.removeEventListener("workspacezero:preview", callback); window.removeEventListener("storage", callback); };
+}
+export function usePreviewWidgets(): Widget[] {
+  const snapshot = useSyncExternalStore(subscribePreview, previewSnapshot, () => null);
+  return useMemo(() => readPreviewWidgets(snapshot), [snapshot]);
+}
+export function savePreviewWidgets(widgets: Widget[]) {
+  sessionStorage.setItem("workspacezero.preview-widgets", JSON.stringify(widgets));
+  window.dispatchEvent(new Event("workspacezero:preview"));
+}
+
+let fallbackTheme: Theme = "dark";
+function readTheme(): Theme {
+  try {
+    const stored = localStorage.getItem("workspacezero.theme");
+    return stored === "light" || stored === "dark" ? stored : fallbackTheme;
+  } catch { return fallbackTheme; }
+}
+function subscribeTheme(callback: () => void) {
+  window.addEventListener("storage", callback);
+  window.addEventListener("workspacezero:theme", callback);
+  return () => { window.removeEventListener("storage", callback); window.removeEventListener("workspacezero:theme", callback); };
+}
+export function setWidgetTheme(theme: Theme) {
+  fallbackTheme = theme;
+  try { localStorage.setItem("workspacezero.theme", theme); } catch { /* Retain this session's preference. */ }
+  window.dispatchEvent(new Event("workspacezero:theme"));
+}
 export function useWidgetTheme(): Theme {
-  const [theme, setTheme] = useState<Theme>("light");
-  useEffect(() => {
-    function readTheme() {
-      try { setTheme(localStorage.getItem("workspacezero.theme") === "dark" ? "dark" : "light"); }
-      catch { /* Browser storage is optional; keep the default. */ }
-    }
-    readTheme();
-    window.addEventListener("storage", readTheme);
-    window.addEventListener("workspacezero:theme", readTheme);
-    return () => { window.removeEventListener("storage", readTheme); window.removeEventListener("workspacezero:theme", readTheme); };
-  }, []);
-  return theme;
+  return useSyncExternalStore(subscribeTheme, readTheme, () => "dark");
 }

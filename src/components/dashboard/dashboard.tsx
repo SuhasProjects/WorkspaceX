@@ -6,12 +6,13 @@ import { useRouter } from "next/navigation";
 import { WorkspaceAccess } from "@/components/auth/workspace-access";
 import { AIBuilderPanel } from "@/components/builder/ai-builder-panel";
 import { TaskBoard } from "@/components/tasks/task-board";
-import type { ApiResponse, GeneratedWidget, Task, TaskStatus, Theme, Widget } from "@/types/contracts";
+import type { ApiResponse, GeneratedWidget, Task, TaskStatus, Widget } from "@/types/contracts";
 import { Icon } from "./icon";
 import { Calendar } from "./calendar";
 import { TodoList } from "@/components/tasks/todo-list";
 import { WorkspaceHeader } from "./workspace-header";
-import { useWorkspaceWidgets } from "./use-workspace-widgets";
+import { setWidgetTheme, useWidgetTheme, useWorkspaceWidgets } from "./use-workspace-widgets";
+import { Atmosphere } from "./atmosphere";
 
 async function post<T>(url: string, body?: unknown): Promise<T> {
   const response = await fetch(url, {
@@ -32,18 +33,10 @@ export function Dashboard() {
   const [taskBusy, setTaskBusy] = useState(false);
   const [taskMessage, setTaskMessage] = useState("");
   const [preview, setPreview] = useState<GeneratedWidget | null>(null);
-  const [theme, setTheme] = useState<Theme>("light");
+  const theme = useWidgetTheme();
   const router = useRouter();
   const { state, retry } = useWorkspaceWidgets();
   const workspaceId = state.status === "ready" ? state.workspace.id : null;
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      try { setTheme(localStorage.getItem("workspacezero.theme") === "dark" ? "dark" : "light"); }
-      catch { /* Keep the default when browser storage is unavailable. */ }
-    }, 0);
-    return () => window.clearTimeout(timer);
-  }, []);
 
   useEffect(() => {
     if (!workspaceId) return;
@@ -83,10 +76,7 @@ export function Dashboard() {
     retry();
   }
   function toggleTheme() {
-    const next = theme === "dark" ? "light" : "dark";
-    setTheme(next);
-    try { localStorage.setItem("workspacezero.theme", next); } catch {}
-    window.dispatchEvent(new Event("workspacezero:theme"));
+    setWidgetTheme(theme === "dark" ? "light" : "dark");
   }
   async function createTask(title: string, description: string) {
     if (workspace.role !== "admin") return false;
@@ -127,7 +117,7 @@ export function Dashboard() {
     if (task) void updateTaskStatus(id, task.status === "done" ? "todo" : "done");
   }
 
-  return <div className="dashboard-shell" data-theme={theme}><a className="skip-link" href="#main">Skip to workspace</a><WorkspaceHeader workspace={workspace} theme={theme} onTheme={toggleTheme} onLogout={logout} />
+  return <div className="dashboard-shell" data-theme={theme}><Atmosphere /><a className="skip-link" href="#main">Skip to workspace</a><WorkspaceHeader workspace={workspace} theme={theme} onTheme={toggleTheme} onLogout={logout} />
     <main id="main" className="dashboard-main"><div className="workspace-intro"><div><p className="eyebrow"><span className="live-dot" />YOUR SHARED SPACE</p><h1>Less setup. More doing.</h1><p>Keep your team&apos;s tasks and little tools in one happy place.</p></div><div className="intro-tag"><Icon name="people" size={17} /><span>Small team. Big possibilities.</span></div></div>
       <div className="dashboard-grid"><div className="workspace-content"><div className="overview-grid"><Calendar /><TodoList tasks={tasks} canEdit={workspace.role === "admin" && !taskBusy} onToggle={toggleTask} /></div><TaskBoard tasks={tasks} canEdit={workspace.role === "admin"} busy={taskBusy} message={taskMessage} onCreate={createTask} onStatus={(id, status) => void updateTaskStatus(id, status)} onDelete={(id) => void deleteTask(id)} />
         <section className="section-block tools-section" aria-labelledby="tools-heading"><div className="section-heading"><div><h2 id="tools-heading">Team tools <span className="count-badge">{widgets.length}</span></h2><p>Small software, made for the way you work.</p></div>{workspace.role === "admin" && <a href="#tool-prompt" className="text-link"><Icon name="plus" size={15} />Create a tool</a>}</div>

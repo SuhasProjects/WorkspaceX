@@ -37,7 +37,7 @@ export function WorkspaceAccess({ onSuccess }: { onSuccess: () => void }) {
     } finally { setBusy(false); }
   }
 
-  return <main className="access-shell">
+  return <main className="access-shell" data-theme="dark">
     <section className="access-card">
       <p className="eyebrow">WORKSPACEZERO</p>
       <h1>{mode === "login" ? "Open your workspace" : "Create a workspace"}</h1>
