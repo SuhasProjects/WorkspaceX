@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { WorkspaceAccess } from "@/components/auth/workspace-access";
 import { AIBuilderPanel } from "@/components/builder/ai-builder-panel";
 import { TaskBoard } from "@/components/tasks/task-board";
@@ -13,6 +12,9 @@ import { TodoList } from "@/components/tasks/todo-list";
 import { WorkspaceHeader } from "./workspace-header";
 import { setWidgetTheme, useWidgetTheme, useWorkspaceWidgets } from "./use-workspace-widgets";
 import { Atmosphere } from "./atmosphere";
+import { ToolManageBar } from "./tool-manage-bar";
+import { WidgetRenderer } from "./widget-renderer-adapter";
+import { setActiveTool, useActiveTool } from "./use-active-tool";
 
 async function post<T>(url: string, body?: unknown): Promise<T> {
   const response = await fetch(url, {
@@ -34,9 +36,9 @@ export function Dashboard() {
   const [taskMessage, setTaskMessage] = useState("");
   const [preview, setPreview] = useState<GeneratedWidget | null>(null);
   const theme = useWidgetTheme();
-  const router = useRouter();
-  const { state, retry } = useWorkspaceWidgets();
+  const { state, retry, moveWidget, removeWidget } = useWorkspaceWidgets();
   const workspaceId = state.status === "ready" ? state.workspace.id : null;
+  const activeTool = useActiveTool();
 
   useEffect(() => {
     if (!workspaceId) return;
@@ -59,6 +61,7 @@ export function Dashboard() {
   if (state.status === "error") return <main className="page-state min-h-screen" role="alert"><h1>Unable to open workspace</h1><p>{state.message}</p><button type="button" onClick={retry}>Try again</button></main>;
 
   const { workspace, widgets } = state;
+  const activeWidget = activeTool ? widgets.find((widget) => widget.id === activeTool) ?? null : null;
 
   async function generate(prompt: string) {
     setPreview(await post<GeneratedWidget>("/api/generate", { prompt }));
@@ -68,7 +71,7 @@ export function Dashboard() {
     const data = await post<{ widget: Widget }>("/api/widgets", preview);
     setPreview(null);
     retry();
-    router.push(`/widgets/${encodeURIComponent(data.widget.id)}`);
+    setActiveTool(data.widget.id);
   }
   async function logout() {
     await post<{ success: true }>("/api/auth/logout");
@@ -121,13 +124,16 @@ export function Dashboard() {
     <main id="main" className="dashboard-main"><div className="workspace-intro"><div><h1>{workspace.name}</h1></div></div>
       <section className="workspace-tabs" aria-label="Workspace pages">
         <nav className="workspace-tab-list">
-          <Link href="/" aria-current="page">Dashboard</Link>
-          {widgets.map((widget) => <Link key={widget.id} href={`/widgets/${encodeURIComponent(widget.id)}`}>{widget.title}</Link>)}
+          <Link href="/" aria-current={activeWidget ? undefined : "page"} onClick={(event) => { event.preventDefault(); setActiveTool(null); }}>Dashboard</Link>
+          {widgets.map((widget) => <a key={widget.id} href={`/?tool=${encodeURIComponent(widget.id)}`} aria-current={widget.id === activeTool ? "page" : undefined} onClick={(event) => { event.preventDefault(); setActiveTool(widget.id); }}>{widget.title}</a>)}
         </nav>
         {workspace.role === "admin" && <a href="#tool-prompt" className="workspace-tab-action"><Icon name="plus" size={14} />New tool</a>}
       </section>
-      <div className="dashboard-grid"><div className="workspace-content"><div className="overview-grid"><Calendar /><TodoList tasks={tasks} canEdit={workspace.role === "admin" && !taskBusy} onToggle={toggleTask} /></div><TaskBoard tasks={tasks} canEdit={workspace.role === "admin"} busy={taskBusy} message={taskMessage} onCreate={createTask} onStatus={(id, status) => void updateTaskStatus(id, status)} onDelete={(id) => void deleteTask(id)} />
-      </div><AIBuilderPanel isAdmin={workspace.role === "admin"} workspaceId={workspace.id} theme={theme} preview={preview} onGenerate={generate} onSave={save} onDiscard={() => setPreview(null)} /></div>
+      {activeWidget ? <section className="tool-pane" aria-label={activeWidget.title}>
+        {workspace.role === "admin" && <ToolManageBar widget={activeWidget} position={widgets.findIndex((widget) => widget.id === activeWidget.id)} count={widgets.length} onMove={moveWidget} onDelete={removeWidget} onDeleted={() => setActiveTool(null)} />}
+        <WidgetRenderer key={`${workspace.id}:${activeWidget.id}`} widgetId={activeWidget.id} workspaceId={workspace.id} html={activeWidget.html} theme={theme} title={activeWidget.title} className="tool-pane-frame" />
+      </section> : <div className="dashboard-grid"><div className="workspace-content"><div className="overview-grid"><Calendar /><TodoList tasks={tasks} canEdit={workspace.role === "admin" && !taskBusy} onToggle={toggleTask} /></div><TaskBoard tasks={tasks} canEdit={workspace.role === "admin"} busy={taskBusy} message={taskMessage} onCreate={createTask} onStatus={(id, status) => void updateTaskStatus(id, status)} onDelete={(id) => void deleteTask(id)} />
+      </div><AIBuilderPanel isAdmin={workspace.role === "admin"} workspaceId={workspace.id} theme={theme} preview={preview} onGenerate={generate} onSave={save} onDiscard={() => setPreview(null)} /></div>}
       <footer className="dashboard-footer"><span>WorkspaceZero · Small software. Shared workspace.</span><span>AI tools, shared with your team</span></footer>
     </main>
   </div>;

@@ -284,3 +284,8 @@ body { font-family: var(--wz-font-body); }
 .wz-tool-btn:hover:not(:disabled) { background: var(--hover); }
 .wz-tool-btn:disabled { opacity: .4; }
 .wz-tool-btn.danger { color: var(--wz-danger); border-color: var(--wz-danger); }
+
+/* ---- Dashboard: tool shown inline under the tabs ---- */
+.tool-pane { border: 1px solid var(--wz-border); border-radius: 3px; background: var(--glass-soft); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); overflow: hidden; }
+.tool-pane .widget-tools { border-bottom: 1px solid var(--wz-border); }
+.tool-pane-frame { height: min(78vh, 920px); min-height: 420px; }
