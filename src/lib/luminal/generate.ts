@@ -1,6 +1,6 @@
 import "server-only";
 import type { GeneratedWidget } from "@/types/contracts";
-import { WIDGET_SYSTEM_PROMPT, parseModelOutput } from "@/lib/widget-protocol/generation-contract";
+import { buildGenerationMessages, parseModelOutput } from "@/lib/widget-protocol/generation-contract";
 
 export type GenerationErrorCode =
   | "INVALID_INPUT"
@@ -18,6 +18,7 @@ export class GenerationError extends Error {
 
 const MAX_PROMPT_CHARACTERS = 4_000;
 const MAX_HTML_BYTES = 100 * 1024;
+const MAX_BASE_HTML_BYTES = 200 * 1024;
 const TIMEOUT_MS = 45_000;
 
 type ChatCompletion = {
@@ -47,15 +48,15 @@ function providerConfig() {
 }
 
 /** Server-only generation. A future admin-authenticated route will call this. */
-export async function generateWidget(prompt: string): Promise<GeneratedWidget> {
+export async function generateWidget(prompt: string, baseHtml?: string): Promise<GeneratedWidget> {
   if (typeof prompt !== "string" || !prompt.trim() || prompt.trim().length > MAX_PROMPT_CHARACTERS) {
     throw new GenerationError("INVALID_INPUT", "Prompt must contain 1 to 4,000 characters.");
   }
+  if (baseHtml !== undefined && (typeof baseHtml !== "string" || !baseHtml.trim() || Buffer.byteLength(baseHtml, "utf8") > MAX_BASE_HTML_BYTES)) {
+    throw new GenerationError("INVALID_INPUT", "Base HTML must be a non-empty document of at most 200 KiB.");
+  }
   const { apiKey, model, endpoint } = providerConfig();
-  const messages = [
-    { role: "system", content: WIDGET_SYSTEM_PROMPT },
-    { role: "user", content: prompt.trim() },
-  ];
+  const messages = buildGenerationMessages({ prompt, baseHtml });
   let response: Response | undefined;
   for (const maxTokens of [8_000, 5_000]) {
     try {
@@ -66,6 +67,7 @@ export async function generateWidget(prompt: string): Promise<GeneratedWidget> {
           model,
           messages,
           max_tokens: maxTokens,
+          temperature: 0.2,
           thinking: { type: "disabled" },
         }),
         cache: "no-store",

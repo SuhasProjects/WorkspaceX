@@ -3,8 +3,10 @@ import { loadEnvConfig } from "@next/env";
 async function main() {
   loadEnvConfig(process.cwd());
   const { generateWidget } = await import("../src/lib/luminal/generate");
-  const widget = await generateWidget("Create a compact shared team poll: Which feature should we build next? Choices: Search, Export, Themes. Use workspace shared storage for votes.");
-  console.log(`PASS: Luminal generated a complete widget titled "${widget.title}" (${Buffer.byteLength(widget.html, "utf8")} bytes).`);
+  const baseHtml = "<!DOCTYPE html><html><head><title>Team Poll</title></head><body><h1>Team Poll</h1><button>Vote</button></body></html>";
+  const widget = await generateWidget("Change only the heading to Feature Poll.", baseHtml);
+  if (!widget.html.includes("Feature Poll")) throw new Error("Luminal did not apply the requested edit.");
+  console.log(`PASS: Luminal edited a complete widget titled "${widget.title}" (${Buffer.byteLength(widget.html, "utf8")} bytes).`);
 }
 
 main().catch((error: unknown) => {

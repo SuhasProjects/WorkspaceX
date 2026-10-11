@@ -20,7 +20,7 @@ hashes never cross it. Responses containing workspace data must not be cached.
 | POST /api/tasks | title, optional description, optional status (default todo) | `{ task: Task }` | Admin | 201 |
 | PATCH /api/tasks/[id] | At least one of title, description, status | `{ task: Task }` | Admin | 200 |
 | DELETE /api/tasks/[id] | Path ID | `{ success: true }` | Admin | 200 |
-| POST /api/generate | prompt | `{ title, html }` | Admin | 200 |
+| POST /api/generate | prompt, optional baseHtml for editing an existing widget | `{ title, html }` | Admin | 200 |
 | GET /api/widgets | None | `{ widgets: Widget[] }` | Admin/member | 200 |
 | POST /api/widgets | title, html | `{ widget: Widget }` | Admin | 201 |
 | DELETE /api/widgets/[id] | Path ID | `{ success: true }` | Admin | 200 |

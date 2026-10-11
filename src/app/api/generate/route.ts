@@ -7,10 +7,12 @@ export async function POST(request: Request) {
   try {
     checkOrigin(request);
     await requireSession("admin");
-    const body = await readJsonObject(request);
-    onlyFields(body, ["prompt"]);
-    if (typeof body.prompt !== "string") throw new HttpError(400, "INVALID_INPUT", "Prompt is required.");
-    return success(await generateWidget(body.prompt));
+    const body = await readJsonObject(request, 256 * 1024);
+    onlyFields(body, ["prompt", "baseHtml"]);
+    if (typeof body.prompt !== "string" || (body.baseHtml !== undefined && typeof body.baseHtml !== "string")) {
+      throw new HttpError(400, "INVALID_INPUT", "Prompt and optional base HTML must be strings.");
+    }
+    return success(await generateWidget(body.prompt, body.baseHtml));
   } catch (error) {
     if (error instanceof GenerationError) {
       const status = { INVALID_INPUT: 400, SERVICE_UNAVAILABLE: 503, RATE_LIMITED: 429,
