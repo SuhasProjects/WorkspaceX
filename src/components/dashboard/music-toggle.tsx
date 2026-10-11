@@ -33,14 +33,14 @@ export function MusicToggle() {
     setMuted(false);
   }
 
-  const label = !playing ? "Play YouTube music" : muted ? "Unmute YouTube music" : "Mute YouTube music";
+  const label = !playing ? "Play music" : muted ? "Unmute music" : "Mute music";
 
   return <div className="music-control">
     <button type="button" className="icon-button music-toggle" aria-label={label} title={label} aria-pressed={playing && !muted} onClick={toggleMusic}>
       <Icon name={!playing ? "play" : muted ? "musicOff" : "music"} />
     </button>
     {playing && <div className="music-player-popover" role="region" aria-label="Music player">
-      <div className="music-player-heading"><span>Workspace music</span><button type="button" className="music-player-close" aria-label="Stop music and close player" onClick={closePlayer}><Icon name="close" size={15} /></button></div>
+      <div className="music-player-heading"><span>Play music</span><button type="button" className="music-player-close" aria-label="Stop music and close player" onClick={closePlayer}><Icon name="close" size={15} /></button></div>
       <iframe
         ref={playerRef}
         className="music-player-frame"
