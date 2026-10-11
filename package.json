@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "next typegen && tsc --noEmit",
-    "verify:db": "node --conditions=react-server --import tsx scripts/verify-db.ts"
+    "verify:db": "node --conditions=react-server --import tsx scripts/verify-db.ts",
+    "verify:luminal-contract": "node --conditions=react-server --import tsx scripts/verify-luminal-contract.ts"
   },
   "engines": {
     "node": ">=24 <25"
