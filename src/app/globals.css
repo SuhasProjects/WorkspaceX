@@ -135,7 +135,7 @@ svg { flex-shrink: 0; }
 @keyframes atmosphere-drift { from { transform: translateX(-50%); } to { transform: translateX(0); } }
 @keyframes atmosphere-breath { from { transform: scaleY(.72); } to { transform: scaleY(1.42); } }
 .atmosphere::after { content: ""; position: absolute; inset: 0; background: transparent; }
-[data-theme="light"] .atmosphere svg { opacity: .1; }
+[data-theme="light"] .atmosphere svg { color: rgba(95, 106, 124, .3); opacity: .66; }
 [data-theme="light"] .atmosphere::after { background: transparent; }
 @media (prefers-reduced-motion: reduce) { .atmosphere-track, .atmosphere-breath { animation: none; will-change: auto; } }
 .skip-link { position: fixed; top: -80px; left: 24px; padding: 12px 20px; background: var(--wz-surface); z-index: 30; border: 2px solid var(--wz-accent); border-radius: 3px; }
