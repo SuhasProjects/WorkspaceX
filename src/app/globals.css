@@ -174,7 +174,7 @@ svg { flex-shrink: 0; }
 .dashboard-grid { display: flex; flex-direction: column; gap: 32px; }
 .workspace-content { width: 100%; min-width: 0; }
 .builder { order: -1; display: grid; grid-template-columns: .8fr 1.2fr; gap: 0 46px; width: 100%; padding: 30px 34px 22px; position: relative; border: 1px solid var(--wz-border); border-radius: 3px; background: var(--glass); backdrop-filter: blur(28px); -webkit-backdrop-filter: blur(28px); box-shadow: var(--glass-shadow); }
-.builder-collapsed { display: block; padding: 0; }
+.builder-close { grid-column: 1 / -1; justify-self: end; font-size: 24px; }
 .builder-toggle { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 0; border: 0; background: transparent; color: var(--wz-text); text-align: left; }
 .builder-collapsed .builder-toggle { min-height: 68px; padding: 0 24px; }
 .builder-toggle::after { content: "+"; color: var(--wz-muted); font-size: 22px; font-weight: 300; line-height: 1; }

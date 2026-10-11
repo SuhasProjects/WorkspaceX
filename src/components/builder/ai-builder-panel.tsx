@@ -41,8 +41,10 @@ export function AIBuilderPanel({ onGenerate, onSave, onDiscard, onToggle, isAdmi
     } finally { setBusy(false); }
   }
 
-  return <aside id="tool-builder" className={`builder ${expanded ? "builder-expanded" : "builder-collapsed"}`} aria-labelledby="builder-heading">
-    <button type="button" className="builder-toggle" aria-expanded={expanded} onClick={onToggle}><h2 id="builder-heading">Create a tool</h2></button>
+  if (!expanded) return null;
+
+  return <aside id="tool-builder" className="builder builder-expanded" aria-label="New tool">
+    <button type="button" className="icon-button builder-close" aria-label="Close tool builder" onClick={onToggle}><span aria-hidden="true">×</span></button>
     {expanded && <><p className="builder-description">Describe the tool your team needs, what it should do, and how you&apos;ll use it.</p>
     {isAdmin ? <><form onSubmit={submit}><label htmlFor="tool-prompt" className="input-label">What would you like to create?</label>
       <textarea ref={inputRef} id="tool-prompt" placeholder="A poll to help our team decide what to work on next…" value={prompt} onChange={(event) => { setPrompt(event.target.value); setError(""); setMessage(""); }} maxLength={4000} required disabled={busy} rows={5} aria-describedby="builder-mode" />
