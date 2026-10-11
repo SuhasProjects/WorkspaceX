@@ -275,3 +275,12 @@ body { font-family: var(--wz-font-body); }
 .builder-preview-frame { min-height: 420px; border: 1px solid var(--wz-border); border-radius: 3px; background: var(--wz-surface); }
 .preview-actions { display: grid; grid-template-columns: 1fr 1.5fr; gap: 8px; margin-top: 10px; }
 .preview-actions > button:first-child { border: 1px solid var(--wz-border); border-radius: 3px; background: transparent; color: var(--wz-text); }
+
+/* ---- Widget page: admin tool management bar ---- */
+.widget-tools { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding: 8px 24px; border-bottom: 1px solid var(--wz-border); background: var(--glass-soft); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
+.widget-tools-label { font-size: 10px; letter-spacing: .16em; text-transform: uppercase; color: var(--wz-muted); font-weight: 500; margin-right: 6px; }
+.widget-tools-confirm { font-size: 12px; color: var(--wz-muted); }
+.wz-tool-btn { font-size: 11px; letter-spacing: .02em; padding: 6px 11px; border: 1px solid var(--wz-border); border-radius: 3px; background: transparent; color: var(--wz-text); }
+.wz-tool-btn:hover:not(:disabled) { background: var(--hover); }
+.wz-tool-btn:disabled { opacity: .4; }
+.wz-tool-btn.danger { color: var(--wz-danger); border-color: var(--wz-danger); }

@@ -24,11 +24,26 @@ async function request<T>(url: string, signal: AbortSignal): Promise<T> {
   return result.data;
 }
 
+// Tab order is kept per browser until the backend stores an order field.
+function orderKey(workspaceId: string) { return `workspacezero.widget-order:${workspaceId}`; }
+function readOrder(workspaceId: string): string[] {
+  try { const raw = localStorage.getItem(orderKey(workspaceId)); const parsed: unknown = raw ? JSON.parse(raw) : []; return Array.isArray(parsed) ? parsed.filter((id): id is string => typeof id === "string") : []; }
+  catch { return []; }
+}
+function writeOrder(workspaceId: string, ids: string[]) {
+  try { localStorage.setItem(orderKey(workspaceId), JSON.stringify(ids)); } catch { /* optional */ }
+}
+function applyOrder(widgets: Widget[], order: string[]): Widget[] {
+  const rank = new Map(order.map((id, index) => [id, index]));
+  return widgets.slice().sort((a, b) => (rank.get(a.id) ?? Number.MAX_SAFE_INTEGER) - (rank.get(b.id) ?? Number.MAX_SAFE_INTEGER));
+}
+
 // Both the dashboard and dedicated page load the same saved Widget records.
 export function useWorkspaceWidgets(preview = false) {
   const previewWidgets = usePreviewWidgets();
   const [state, setState] = useState<WorkspaceState>({ status: "loading" });
   const [revision, setRevision] = useState(0);
+  const [orderVersion, setOrderVersion] = useState(0);
   useEffect(() => {
     if (preview) {
       return;
@@ -39,7 +54,7 @@ export function useWorkspaceWidgets(preview = false) {
       request<ApiData["widgets"]>("/api/widgets", controller.signal),
     ]).then(([workspaceData, widgetData]) => {
       if (!workspaceData.workspace?.id || !Array.isArray(widgetData.widgets)) throw new Error("The workspace response isn't ready. Please try again.");
-      if (!controller.signal.aborted) setState({ status: "ready", workspace: workspaceData.workspace, widgets: widgetData.widgets });
+      if (!controller.signal.aborted) setState({ status: "ready", workspace: workspaceData.workspace, widgets: applyOrder(widgetData.widgets, readOrder(workspaceData.workspace.id)) });
     }).catch((error: unknown) => {
       if (!controller.signal.aborted) {
         if (error instanceof RequestError && error.status === 401) setState({ status: "signed_out" });
@@ -49,8 +64,31 @@ export function useWorkspaceWidgets(preview = false) {
     return () => controller.abort();
   }, [revision, preview]);
   function retry() { setState({ status: "loading" }); setRevision((value) => value + 1); }
+  /** Moves a widget one slot left (-1) or right (+1) in every tab list. */
+  function moveWidget(id: string, delta: -1 | 1) {
+    if (state.status !== "ready") return;
+    const ids = state.widgets.map((widget) => widget.id);
+    const from = ids.indexOf(id), to = from + delta;
+    if (from < 0 || to < 0 || to >= ids.length) return;
+    ids.splice(to, 0, ids.splice(from, 1)[0]);
+    writeOrder(state.workspace.id, ids);
+    setState({ ...state, widgets: applyOrder(state.widgets, ids) });
+    setOrderVersion((value) => value + 1);
+  }
+  /** Deletes a widget and its shared data (admin only; the server enforces this). */
+  async function removeWidget(id: string): Promise<string | null> {
+    if (state.status !== "ready") return "Not ready.";
+    const response = await fetch(`/api/widgets/${encodeURIComponent(id)}`, { method: "DELETE", credentials: "same-origin" });
+    if (!response.ok) {
+      const result = (await response.json().catch(() => null)) as ApiResponse<unknown> | null;
+      return result?.error?.message ?? "The tool could not be deleted.";
+    }
+    setState({ ...state, widgets: state.widgets.filter((widget) => widget.id !== id) });
+    return null;
+  }
   const resolvedState: WorkspaceState = preview ? { status: "ready", workspace: mockWorkspace, widgets: previewWidgets } : state;
-  return { state: resolvedState, retry };
+  void orderVersion;
+  return { state: resolvedState, retry, moveWidget, removeWidget };
 }
 
 function previewSnapshot(): string | null {
