@@ -162,3 +162,27 @@ export function setWidgetTheme(theme: Theme) {
 export function useWidgetTheme(): Theme {
   return useSyncExternalStore(subscribeTheme, readTheme, () => "dark");
 }
+
+let fallbackAtmosphereAnimation = true;
+function readAtmosphereAnimation(): boolean {
+  try {
+    const stored = localStorage.getItem("workspacezero.atmosphere-animation");
+    return stored === null ? fallbackAtmosphereAnimation : stored === "on";
+  } catch { return fallbackAtmosphereAnimation; }
+}
+function subscribeAtmosphereAnimation(callback: () => void) {
+  window.addEventListener("storage", callback);
+  window.addEventListener("workspacezero:atmosphere-animation", callback);
+  return () => {
+    window.removeEventListener("storage", callback);
+    window.removeEventListener("workspacezero:atmosphere-animation", callback);
+  };
+}
+export function setAtmosphereAnimation(enabled: boolean) {
+  fallbackAtmosphereAnimation = enabled;
+  try { localStorage.setItem("workspacezero.atmosphere-animation", enabled ? "on" : "off"); } catch { /* Retain this session's preference. */ }
+  window.dispatchEvent(new Event("workspacezero:atmosphere-animation"));
+}
+export function useAtmosphereAnimation(): boolean {
+  return useSyncExternalStore(subscribeAtmosphereAnimation, readAtmosphereAnimation, () => true);
+}

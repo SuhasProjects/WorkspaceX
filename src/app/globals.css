@@ -132,6 +132,7 @@ svg { flex-shrink: 0; }
 .atmosphere svg { position: absolute; top: -90px; right: -150px; width: max(240%, 2800px); height: 1100px; color: rgba(169, 184, 210, .22); opacity: .9; }
 .atmosphere-track { transform-box: view-box; animation: atmosphere-drift 80s linear infinite; will-change: transform; }
 .atmosphere-breath { transform-box: view-box; transform-origin: center; animation: atmosphere-breath 36s ease-in-out infinite alternate; will-change: transform; }
+.atmosphere[data-animation="off"] .atmosphere-track, .atmosphere[data-animation="off"] .atmosphere-breath { animation: none; will-change: auto; }
 @keyframes atmosphere-drift { from { transform: translateX(-50%); } to { transform: translateX(0); } }
 @keyframes atmosphere-breath { from { transform: scaleY(.72); } to { transform: scaleY(1.42); } }
 .atmosphere::after { content: ""; position: absolute; inset: 0; background: transparent; }
@@ -153,6 +154,7 @@ svg { flex-shrink: 0; }
 .header-actions { margin-left: auto; display: flex; align-items: center; gap: 12px; }
 .icon-button { display: grid; place-items: center; width: 35px; height: 35px; border-radius: 50%; border: 1px solid transparent; color: var(--wz-muted); background: transparent; }
 .icon-button:not(:disabled):hover { background: var(--hover); border-color: var(--wz-border); color: var(--wz-text); }
+.animation-toggle[aria-pressed="false"] { opacity: .55; }
 .icon-button:disabled { opacity: .45; }
 .avatar, .task-avatar { border-radius: 50%; display: grid; place-items: center; background: var(--hover); color: var(--wz-text); border: 1px solid var(--wz-border); font-weight: 500; }
 .avatar { width: 32px; height: 32px; font-size: 10px; }

@@ -10,6 +10,7 @@ const paths = {
   sun: "M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8 M12 2v2 M12 20v2 M2 12h2 M20 12h2 M5 5l1.5 1.5 M17.5 17.5 19 19 M5 19l1.5-1.5 M17.5 6.5 19 5",
   logout: "M9 4H4v16h5 M10 12h11 M17 8l4 4-4 4",
   people: "M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2 M13 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0 M22 21v-2a4 4 0 0 0-3-3.87 M16 3.13a4 4 0 0 1 0 7.75",
+  waves: "M2 7c2.5-2 5.5-2 8 0s5.5 2 8 0 5.5-2 8 0 M2 12c2.5-2 5.5-2 8 0s5.5 2 8 0 5.5-2 8 0 M2 17c2.5-2 5.5-2 8 0s5.5 2 8 0 5.5-2 8 0",
 } as const;
 
 export function Icon({ name, size = 18 }: { name: keyof typeof paths; size?: number }) {

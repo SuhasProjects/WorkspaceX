@@ -1,3 +1,7 @@
+"use client";
+
+import { useAtmosphereAnimation } from "./use-workspace-widgets";
+
 const WAVE_COUNT = 17;
 const WAVE_SPACING = 24;
 const WAVE_PERIOD = 800;
@@ -27,13 +31,14 @@ function waveBand(upper: number, lower: number, center: number) {
 
 /** Stacked, seamless wave contours for the dashboard background. */
 export function Atmosphere() {
+  const animationEnabled = useAtmosphereAnimation();
   const center = (WAVE_COUNT - 1) / 2;
   const waves = Array.from({ length: WAVE_COUNT }, (_, index) => ({
     index,
   }));
 
   return (
-    <div className="atmosphere" aria-hidden="true">
+    <div className="atmosphere" data-animation={animationEnabled ? "on" : "off"} aria-hidden="true">
       <svg viewBox="0 0 3200 1100" preserveAspectRatio="xMidYMin slice">
         <g className="atmosphere-track">
           <g className="atmosphere-breath">
