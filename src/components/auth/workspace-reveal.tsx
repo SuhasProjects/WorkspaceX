@@ -28,33 +28,45 @@ export function prepareWorkspaceRevealSound(): WorkspaceRevealSound {
         void context.resume().then(() => {
           if (context.state === "closed") return;
           const now = context.currentTime;
+          const warmth = context.createBiquadFilter();
+          warmth.type = "lowpass";
+          warmth.frequency.setValueAtTime(1050, now);
+          warmth.frequency.exponentialRampToValueAtTime(1750, now + 0.9);
+          warmth.frequency.setValueAtTime(1750, now + 1.2);
           const master = context.createGain();
           master.gain.setValueAtTime(0.0001, now);
-          master.gain.exponentialRampToValueAtTime(0.2, now + 0.08);
-          master.gain.exponentialRampToValueAtTime(0.0001, now + 1.15);
+          master.gain.exponentialRampToValueAtTime(0.46, now + 0.45);
+          master.gain.setValueAtTime(0.46, now + 1.1);
+          master.gain.exponentialRampToValueAtTime(0.0001, now + 1.9);
           master.connect(context.destination);
+          warmth.connect(master);
 
           [
-            { start: 0, from: 392, to: 587, level: 0.52 },
-            { start: 0.12, from: 587, to: 880, level: 0.36 },
-            { start: 0.25, from: 784, to: 1176, level: 0.2 },
-          ].forEach(({ start, from, to, level }) => {
+            { start: 0, from: 146.83, to: 164.81, level: 0.13, detune: -5 },
+            { start: 0.025, from: 146.83, to: 164.81, level: 0.13, detune: 5 },
+            { start: 0.04, from: 183.54, to: 206.77, level: 0.085, detune: -4 },
+            { start: 0.065, from: 183.54, to: 206.77, level: 0.085, detune: 4 },
+            { start: 0.08, from: 220.25, to: 246.94, level: 0.05, detune: -3 },
+            { start: 0.105, from: 220.25, to: 246.94, level: 0.05, detune: 3 },
+          ].forEach(({ start, from, to, level, detune }) => {
             const oscillator = context.createOscillator();
             const envelope = context.createGain();
             const beginning = now + start;
             oscillator.type = "sine";
+            oscillator.detune.setValueAtTime(detune, beginning);
             oscillator.frequency.setValueAtTime(from, beginning);
-            oscillator.frequency.exponentialRampToValueAtTime(to, beginning + 0.52);
+            oscillator.frequency.exponentialRampToValueAtTime(to, beginning + 0.9);
             envelope.gain.setValueAtTime(0.0001, beginning);
-            envelope.gain.exponentialRampToValueAtTime(level, beginning + 0.07);
-            envelope.gain.exponentialRampToValueAtTime(0.0001, beginning + 1.05);
+            envelope.gain.exponentialRampToValueAtTime(level, beginning + 0.42);
+            envelope.gain.setValueAtTime(level, now + 1.15);
+            envelope.gain.exponentialRampToValueAtTime(0.0001, now + 1.85);
             oscillator.connect(envelope);
-            envelope.connect(master);
+            envelope.connect(warmth);
             oscillator.start(beginning);
-            oscillator.stop(beginning + 1.08);
+            oscillator.stop(now + 1.9);
           });
 
-          window.setTimeout(cancel, 1500);
+          window.setTimeout(cancel, 2200);
         }).catch(() => undefined);
       },
       cancel,
