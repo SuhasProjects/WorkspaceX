@@ -17,14 +17,16 @@ export async function POST(request: Request) {
     checkOrigin(request);
     const session = await requireSession("admin");
     const body = await readJsonObject(request);
-    onlyFields(body, ["title", "description", "status"]);
+    onlyFields(body, ["title", "description", "dueDate", "status"]);
     if (typeof body.title !== "string" || (body.description !== undefined && typeof body.description !== "string") ||
+        (body.dueDate !== undefined && typeof body.dueDate !== "string") ||
         (body.status !== undefined && typeof body.status !== "string")) {
       throw new HttpError(400, "INVALID_INPUT", "A task title and valid optional fields are required.");
     }
     const task = await createTask(session.workspaceId, {
       title: body.title,
       ...(body.description === undefined ? {} : { description: body.description }),
+      ...(body.dueDate === undefined ? {} : { dueDate: body.dueDate }),
       ...(body.status === undefined ? {} : { status: body.status as never }),
     });
     return success({ task }, 201);

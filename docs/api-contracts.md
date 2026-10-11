@@ -17,8 +17,8 @@ hashes never cross it. Responses containing workspace data must not be cached.
 | POST /api/auth/logout | None | `{ success: true }` | Idempotent, including logged out | 200 |
 | GET /api/workspaces/current | None | `{ workspace: Workspace }` | Admin/member | 200 |
 | GET /api/tasks | None | `{ tasks: Task[] }` | Admin/member | 200 |
-| POST /api/tasks | title, optional description, optional status (default todo) | `{ task: Task }` | Admin | 201 |
-| PATCH /api/tasks/[id] | At least one of title, description, status | `{ task: Task }` | Admin | 200 |
+| POST /api/tasks | title, optional description, dueDate, and status (default todo) | `{ task: Task }` | Admin | 201 |
+| PATCH /api/tasks/[id] | At least one of title, description, dueDate, or status | `{ task: Task }` | Admin | 200 |
 | DELETE /api/tasks/[id] | Path ID | `{ success: true }` | Admin | 200 |
 | POST /api/generate | prompt | `{ title, html }` | Admin | 200 |
 | GET /api/widgets | None | `{ widgets: Widget[] }` | Admin/member | 200 |
@@ -45,7 +45,8 @@ letters, digits, or hyphens; generated when omitted. Passwords: 12–128 charact
 not trimmed. Descriptions: up to 2,000 characters. Prompts: trimmed, 1–4,000
 characters. Storage keys: 1–128 ASCII letters, digits, dots, underscores, or
 hyphens. IDs supplied in paths must be valid IDs and belong to the session's
-workspace. Task statuses are `todo`, `in_progress`, `done`. Clear a description
+workspace. Task statuses are `todo`, `in_progress`, `done`. Task due dates use
+`YYYY-MM-DD`. Clear a description
 with an empty string. HTML validation checks the document format and size; it
 does not establish that generated code is safe.
 

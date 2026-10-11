@@ -77,11 +77,11 @@ export function Dashboard() {
   function toggleTheme() {
     setWidgetTheme(theme === "dark" ? "light" : "dark");
   }
-  async function createTask(title: string, description: string) {
+  async function createTask(title: string, description: string, dueDate: string) {
     if (workspace.role !== "admin") return false;
     setTaskBusy(true); setTaskMessage("");
     try {
-      const data = await post<{ task: Task }>("/api/tasks", { title, ...(description ? { description } : {}) });
+      const data = await post<{ task: Task }>("/api/tasks", { title, ...(description ? { description } : {}), ...(dueDate ? { dueDate } : {}) });
       setTasks((current) => [...current, data.task]);
       return true;
     } catch (error) {
