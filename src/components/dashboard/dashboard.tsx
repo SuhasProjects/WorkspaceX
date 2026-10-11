@@ -2,7 +2,11 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { WorkspaceAccess } from "@/components/auth/workspace-access";
+import { AccountAccess } from "@/components/auth/account-access";
+import { canManage } from "@/lib/auth/roles";
+import { MembersPanel } from "./members-panel";
+import { InvitationsPanel } from "./invitations-panel";
+import type { DashboardPanel } from "./account-menu";
 import { WorkspaceReveal, type WorkspaceRevealSound } from "@/components/auth/workspace-reveal";
 import { AIBuilderPanel } from "@/components/builder/ai-builder-panel";
 import { TaskBoard } from "@/components/tasks/task-board";
@@ -56,7 +60,9 @@ export function Dashboard() {
   const [showLoginReveal, setShowLoginReveal] = useState(false);
   const loginRevealSound = useRef<WorkspaceRevealSound | null>(null);
   const theme = useWidgetTheme();
-  const { state, retry, reorderWidget, removeWidget, duplicateWidget, updateWidget, updateWidgetSize, updateWidgetSpan } = useWorkspaceWidgets();
+  const { state, retry, switchWorkspace, createWorkspace, reorderWidget, removeWidget, duplicateWidget, updateWidget, updateWidgetSize, updateWidgetSpan } = useWorkspaceWidgets();
+  const [panel, setPanel] = useState<DashboardPanel | null>(null);
+  const [invitationCount, setInvitationCount] = useState(0);
   const [editingTool, setEditingTool] = useState<string | null>(null);
   const [orderError, setOrderError] = useState("");
   const [dragging, setDragging] = useState<string | null>(null);
@@ -101,11 +107,22 @@ export function Dashboard() {
     return () => controller.abort();
   }, [workspaceId]);
 
+  useEffect(() => {
+    if (!workspaceId) return;
+    const controller = new AbortController();
+    fetch("/api/invitations", { credentials: "same-origin", cache: "no-store", signal: controller.signal })
+      .then((response) => response.ok ? response.json() : null)
+      .then((result: ApiResponse<{ invitations: unknown[] }> | null) => { if (!controller.signal.aborted && result?.data) setInvitationCount(result.data.invitations.length); })
+      .catch(() => {});
+    return () => controller.abort();
+  }, [workspaceId, panel]);
+
   if (state.status === "loading") return <>{revealOverlay}<main className="page-state min-h-screen" role="status"><span className="spinner" /><p>Opening your workspace…</p></main></>;
-  if (state.status === "signed_out") return <>{revealOverlay}<WorkspaceAccess onSuccess={handleAccessSuccess} /></>;
+  if (state.status === "signed_out") return <>{revealOverlay}<AccountAccess onSuccess={handleAccessSuccess} /></>;
   if (state.status === "error") return <>{revealOverlay}<main className="page-state min-h-screen" role="alert"><h1>Unable to open workspace</h1><p>{state.message}</p><button type="button" onClick={retry}>Try again</button></main></>;
 
-  const { workspace, widgets } = state;
+  const { account, workspace, workspaces, widgets } = state;
+  const manage = canManage(workspace.role);
   const compactWidgets = widgets.filter((widget) => widget.size !== "large");
   const largeWidgets = widgets.filter((widget) => widget.size === "large");
   const selectedWidget = activeTool ? widgets.find((widget) => widget.id === activeTool) ?? null : null;
@@ -147,7 +164,7 @@ export function Dashboard() {
     } finally { setTaskBusy(false); }
   }
   async function updateTask(id: string, updates: UpdateTaskRequest) {
-    if (workspace.role !== "admin" && Object.keys(updates).some((key) => key !== "status")) return false;
+    if (!manage && Object.keys(updates).some((key) => key !== "status")) return false;
     setTaskBusy(true); setTaskMessage("");
     try {
       const response = await fetch(`/api/tasks/${encodeURIComponent(id)}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, credentials: "same-origin", body: JSON.stringify(updates) });
@@ -165,7 +182,7 @@ export function Dashboard() {
     await updateTask(id, { status });
   }
   async function deleteTask(id: string) {
-    if (workspace.role !== "admin") return;
+    if (!manage) return;
     setTaskBusy(true); setTaskMessage("");
     try {
       const response = await fetch(`/api/tasks/${encodeURIComponent(id)}`, { method: "DELETE", credentials: "same-origin" });
@@ -183,7 +200,7 @@ export function Dashboard() {
     return updateWidgetSize(id, size);
   }
 
-  return <>{revealOverlay}<div className="dashboard-shell" data-theme={theme}><Atmosphere /><a className="skip-link" href="#main">Skip to workspace</a><WorkspaceHeader workspace={workspace} theme={theme} onTheme={toggleTheme} onLogout={logout} />
+  return <>{revealOverlay}<div className="dashboard-shell" data-theme={theme}><Atmosphere /><a className="skip-link" href="#main">Skip to workspace</a><WorkspaceHeader account={account} workspace={workspace} workspaces={workspaces} invitationCount={invitationCount} theme={theme} onTheme={toggleTheme} onLogout={logout} onSwitch={(id) => { setPanel(null); return switchWorkspace(id); }} onCreate={(name) => { setPanel(null); return createWorkspace(name); }} onOpenPanel={setPanel} />
     <main id="main" className="dashboard-main dashboard-home" aria-label={workspace.name}>
       <section className="workspace-tabs" aria-label="Workspace pages">
         <nav className="workspace-tab-list">
@@ -193,24 +210,26 @@ export function Dashboard() {
             onNavigate={(event) => { event.preventDefault(); navigateDashboardTool(widget.id, activeTool); }}
             aria-current={widget.id === activeTool ? "page" : undefined}
             className={`${dragging === widget.id ? "is-dragging" : ""} ${dropTarget === widget.id ? "is-drop-target" : ""}`}
-            draggable={workspace.role === "admin"}
+            draggable={manage}
             onDragStart={(event) => { event.dataTransfer.effectAllowed = "move"; event.dataTransfer.setData("text/plain", widget.id); setDragging(widget.id); }}
             onDragOver={(event) => { if (!dragging) return; event.preventDefault(); event.dataTransfer.dropEffect = "move"; if (dropTarget !== widget.id) setDropTarget(widget.id); }}
             onDragLeave={() => { if (dropTarget === widget.id) setDropTarget(null); }}
             onDrop={(event) => { event.preventDefault(); if (dragging) void reorderWidget(dragging, widget.id).then((message) => setOrderError(message ?? "")); setDragging(null); setDropTarget(null); }}
             onDragEnd={() => { setDragging(null); setDropTarget(null); }}
-            title={workspace.role === "admin" ? "Drag to reorder" : undefined}>{widget.title}</Link>)}
+            title={manage ? "Drag to reorder" : undefined}>{widget.title}</Link>)}
         </nav>
-        {workspace.role === "admin" && <a href="#tool-builder" className="workspace-tab-action" onClick={() => { setActiveTool(null); setBuilderOpen(true); }}><Icon name="plus" size={14} />New tool</a>}
+        {manage && <a href="#tool-builder" className="workspace-tab-action" onClick={() => { setActiveTool(null); setBuilderOpen(true); }}><Icon name="plus" size={14} />New tool</a>}
       </section>
-      <div className="dashboard-tab-panel">{activeWidget ? <section className="tool-pane" aria-label={activeWidget.title}>
-        {workspace.role === "admin" && <ToolManageBar widget={activeWidget} onDelete={removeWidget} onDuplicate={duplicateWidget} onSize={changeWidgetSize} onDeleted={() => setActiveTool(null)} editing={editingTool === activeWidget.id} onEdit={() => setEditingTool(editingTool === activeWidget.id ? null : activeWidget.id)} />}
+      <div className="dashboard-tab-panel">{panel === "members" ? <MembersPanel workspace={workspace} currentUserId={account.id} onClose={() => setPanel(null)} />
+      : panel === "invitations" ? <InvitationsPanel onClose={() => setPanel(null)} onChanged={() => setInvitationCount((count) => Math.max(0, count - 1))} onOpenWorkspace={(id) => { setPanel(null); void switchWorkspace(id); }} />
+      : activeWidget ? <section className="tool-pane" aria-label={activeWidget.title}>
+        {manage && <ToolManageBar widget={activeWidget} onDelete={removeWidget} onDuplicate={duplicateWidget} onSize={changeWidgetSize} onDeleted={() => setActiveTool(null)} editing={editingTool === activeWidget.id} onEdit={() => setEditingTool(editingTool === activeWidget.id ? null : activeWidget.id)} />}
         {orderError && <p className="widget-tools-confirm" role="alert">{orderError}</p>}
-        {workspace.role === "admin" && editingTool === activeWidget.id
+        {manage && editingTool === activeWidget.id
           ? <ToolEditor key={activeWidget.id} widget={activeWidget} workspaceId={workspace.id} theme={theme} onClose={() => setEditingTool(null)} onSaved={(saved) => { updateWidget(saved); setEditingTool(null); }} />
           : <WidgetRenderer key={`${workspace.id}:${activeWidget.id}:${activeWidget.html.length}`} widgetId={activeWidget.id} workspaceId={workspace.id} html={activeWidget.html} theme={theme} title={activeWidget.title} className="tool-pane-frame" />}
-      </section> : showingGallery ? <WidgetGallery widgets={compactWidgets} workspaceId={workspace.id} theme={theme} isAdmin={workspace.role === "admin"} onSpan={updateWidgetSpan} onDelete={removeWidget} onDuplicate={duplicateWidget} onSize={changeWidgetSize} onUpdate={updateWidget} /> : <div className="dashboard-grid"><div className="workspace-content"><div className="overview-grid"><Calendar tasks={tasks} selectedDueDate={selectedDueDate} onSelectDueDate={setSelectedDueDate} /><TodoList tasks={tasks} canEdit={!taskBusy} selectedDueDate={selectedDueDate} onClearDate={() => setSelectedDueDate(null)} onToggle={toggleTask} /></div><TaskBoard tasks={tasks} canEdit={workspace.role === "admin"} canCreate canMove busy={taskBusy} message={taskMessage} onCreate={createTask} onUpdate={updateTask} onStatus={(id, status) => void updateTaskStatus(id, status)} onDelete={(id) => void deleteTask(id)} />
-      </div>{workspace.role === "admin" && <AIBuilderPanel isAdmin usage={{ count: widgets.length, limit: widgetLimitFor(workspace.plan), plan: workspace.plan }} referenceOptions={widgets.map(({ id, title }) => ({ id, title }))} expanded={builderOpen} onToggle={() => setBuilderOpen((current) => !current)} workspaceId={workspace.id} theme={theme} preview={preview} onGenerate={generate} onSave={save} onDiscard={() => setPreview(null)} />}</div>}</div>
+      </section> : showingGallery ? <WidgetGallery widgets={compactWidgets} workspaceId={workspace.id} theme={theme} isAdmin={manage} onSpan={updateWidgetSpan} onDelete={removeWidget} onDuplicate={duplicateWidget} onSize={changeWidgetSize} onUpdate={updateWidget} /> : <div className="dashboard-grid"><div className="workspace-content"><div className="overview-grid"><Calendar tasks={tasks} selectedDueDate={selectedDueDate} onSelectDueDate={setSelectedDueDate} /><TodoList tasks={tasks} canEdit={!taskBusy} selectedDueDate={selectedDueDate} onClearDate={() => setSelectedDueDate(null)} onToggle={toggleTask} /></div><TaskBoard tasks={tasks} canEdit={manage} canCreate canMove busy={taskBusy} message={taskMessage} onCreate={createTask} onUpdate={updateTask} onStatus={(id, status) => void updateTaskStatus(id, status)} onDelete={(id) => void deleteTask(id)} />
+      </div>{manage && <AIBuilderPanel isAdmin usage={{ count: widgets.length, limit: widgetLimitFor(workspace.plan), plan: workspace.plan }} referenceOptions={widgets.map(({ id, title }) => ({ id, title }))} expanded={builderOpen} onToggle={() => setBuilderOpen((current) => !current)} workspaceId={workspace.id} theme={theme} preview={preview} onGenerate={generate} onSave={save} onDiscard={() => setPreview(null)} />}</div>}</div>
       <footer className="dashboard-footer"><span>WorkspaceZero · Small software. Shared workspace.</span><span>AI tools, shared with your team</span></footer>
     </main>
   </div></>;

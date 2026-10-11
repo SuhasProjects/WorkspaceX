@@ -1,13 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
-import type { ApiData, ApiResponse, Theme, Widget, WidgetSize, WidgetSpan, Workspace } from "@/types/contracts";
-import { mockWorkspace, readPreviewWidgets } from "./mock-data";
+import type { Account, ApiData, ApiResponse, Theme, Widget, WidgetSize, WidgetSpan, Workspace } from "@/types/contracts";
+import { mockAccount, mockWorkspace, readPreviewWidgets } from "./mock-data";
 
 type WorkspaceState =
   | { status: "loading" }
   | { status: "signed_out" }
-  | { status: "ready"; workspace: Workspace; widgets: Widget[] }
+  | { status: "ready"; account: Account; workspace: Workspace; workspaces: Workspace[]; widgets: Widget[] }
   | { status: "error"; message: string };
 
 class RequestError extends Error {
@@ -16,12 +16,20 @@ class RequestError extends Error {
 
 async function request<T>(url: string, signal: AbortSignal): Promise<T> {
   const response = await fetch(url, { signal, cache: "no-store", credentials: "same-origin" });
-  if (response.status === 401) throw new RequestError(401, "Sign in to your workspace to open its saved tools.");
-  if (response.status === 403) throw new RequestError(403, "Your session doesn't have access to these tools.");
-  if (!response.ok) throw new Error("We couldn't load the workspace tools. Please try again.");
-  const result: ApiResponse<T> = await response.json();
-  if (result.error || !result.data) throw new Error("We couldn't load the workspace tools. Please try again.");
+  const result = (await response.json().catch(() => null)) as ApiResponse<T> | null;
+  if (response.status === 401) throw new RequestError(401, "Sign in to open your workspace.");
+  if (response.status === 403) throw new RequestError(403, "Your account doesn't have access to this workspace.");
+  if (response.status === 409 && result?.error?.code === "NO_ACTIVE_WORKSPACE") throw new RequestError(409, "Select a workspace to continue.");
+  if (!response.ok || !result?.data) throw new Error(result?.error?.message ?? "We couldn't load the workspace. Please try again.");
   return result.data;
+}
+
+async function selectWorkspace(id: string): Promise<void> {
+  const response = await fetch(`/api/workspaces/${encodeURIComponent(id)}/select`, { method: "POST", credentials: "same-origin" });
+  if (!response.ok) {
+    const result = (await response.json().catch(() => null)) as ApiResponse<unknown> | null;
+    throw new Error(result?.error?.message ?? "That workspace could not be opened.");
+  }
 }
 
 function moveId(ids: string[], draggedId: string, targetId: string): string[] | null {
@@ -42,13 +50,26 @@ export function useWorkspaceWidgets(preview = false) {
       return;
     }
     const controller = new AbortController();
-    Promise.all([
-      request<ApiData["workspace"]>("/api/workspaces/current", controller.signal),
-      request<ApiData["widgets"]>("/api/widgets", controller.signal),
-    ]).then(([workspaceData, widgetData]) => {
-      if (!workspaceData.workspace?.id || !Array.isArray(widgetData.widgets)) throw new Error("The workspace response isn't ready. Please try again.");
-      if (!controller.signal.aborted) setState({ status: "ready", workspace: workspaceData.workspace, widgets: widgetData.widgets });
-    }).catch((error: unknown) => {
+    (async () => {
+      const [accountData, workspacesData] = await Promise.all([
+        request<ApiData["account"]>("/api/account", controller.signal),
+        request<ApiData["workspaces"]>("/api/workspaces", controller.signal),
+      ]);
+      let current: ApiData["workspace"] | null = null;
+      try {
+        current = await request<ApiData["workspace"]>("/api/workspaces/current", controller.signal);
+      } catch (error) {
+        // No usable selection in the session: fall back to the first accessible workspace.
+        if (!(error instanceof RequestError && error.status === 409)) throw error;
+        const first = workspacesData.workspaces[0];
+        if (!first) throw new Error("You don't belong to any workspace yet. Create one from the account menu.");
+        await selectWorkspace(first.id);
+        current = await request<ApiData["workspace"]>("/api/workspaces/current", controller.signal);
+      }
+      const widgetData = await request<ApiData["widgets"]>("/api/widgets", controller.signal);
+      if (!current.workspace?.id || !Array.isArray(widgetData.widgets)) throw new Error("The workspace response isn't ready. Please try again.");
+      if (!controller.signal.aborted) setState({ status: "ready", account: accountData.account, workspace: current.workspace, workspaces: workspacesData.workspaces, widgets: widgetData.widgets });
+    })().catch((error: unknown) => {
       if (!controller.signal.aborted) {
         if (error instanceof RequestError && error.status === 401) setState({ status: "signed_out" });
         else setState({ status: "error", message: error instanceof Error ? error.message : "We couldn't load your tools." });
@@ -57,6 +78,19 @@ export function useWorkspaceWidgets(preview = false) {
     return () => controller.abort();
   }, [revision, preview]);
   function retry() { setState({ status: "loading" }); setRevision((value) => value + 1); }
+  /** Switches the active workspace. State goes back to loading so nothing from the previous workspace lingers. */
+  async function switchWorkspace(id: string): Promise<string | null> {
+    try { await selectWorkspace(id); } catch (error) { return error instanceof Error ? error.message : "Could not switch workspace."; }
+    retry();
+    return null;
+  }
+  async function createWorkspace(name: string): Promise<string | null> {
+    const response = await fetch("/api/workspaces", { method: "POST", headers: { "Content-Type": "application/json" }, credentials: "same-origin", body: JSON.stringify({ name }) });
+    const result = (await response.json().catch(() => null)) as ApiResponse<ApiData["workspace"]> | null;
+    if (!response.ok || !result?.data) return result?.error?.message ?? "The workspace could not be created.";
+    retry();
+    return null;
+  }
   /** Drops `draggedId` into `targetId`'s slot and saves the order for the whole team. */
   async function reorderWidget(draggedId: string, targetId: string): Promise<string | null> {
     if (state.status !== "ready" || draggedId === targetId) return null;
@@ -121,8 +155,8 @@ export function useWorkspaceWidgets(preview = false) {
   function updateWidgetSize(id: string, size: WidgetSize) { return patchWidget(id, { size }); }
   /** Saves a drag-resized footprint for everyone in the workspace. */
   function updateWidgetSpan(id: string, span: WidgetSpan) { return patchWidget(id, { span }); }
-  const resolvedState: WorkspaceState = preview ? { status: "ready", workspace: mockWorkspace, widgets: previewWidgets } : state;
-  return { state: resolvedState, retry, reorderWidget, removeWidget, duplicateWidget, updateWidget, updateWidgetSize, updateWidgetSpan };
+  const resolvedState: WorkspaceState = preview ? { status: "ready", account: mockAccount, workspace: mockWorkspace, workspaces: [mockWorkspace], widgets: previewWidgets } : state;
+  return { state: resolvedState, retry, switchWorkspace, createWorkspace, reorderWidget, removeWidget, duplicateWidget, updateWidget, updateWidgetSize, updateWidgetSpan };
 }
 
 function previewSnapshot(): string | null {

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { setAtmosphereAnimation, useAtmosphereAnimation, useWidgetTheme, useWorkspaceWidgets } from "./use-workspace-widgets";
 import { WidgetRenderer } from "./widget-renderer-adapter";
 import { Icon } from "./icon";
+import { canManage } from "@/lib/auth/roles";
 import { Atmosphere } from "./atmosphere";
 import { ToolManageBar } from "./tool-manage-bar";
 import type { WidgetSize } from "@/types/contracts";
@@ -12,7 +13,7 @@ import type { WidgetSize } from "@/types/contracts";
 export function WidgetPage({ widgetId, preview = false }: { widgetId: string; preview?: boolean }) {
   const { state, retry, removeWidget, duplicateWidget, updateWidgetSize } = useWorkspaceWidgets(preview);
   const router = useRouter();
-  const isAdmin = state.status === "ready" && state.workspace.role === "admin" && !preview;
+  const isAdmin = state.status === "ready" && canManage(state.workspace.role) && !preview;
   const theme = useWidgetTheme();
   const animationEnabled = useAtmosphereAnimation();
   function toggleTheme() {

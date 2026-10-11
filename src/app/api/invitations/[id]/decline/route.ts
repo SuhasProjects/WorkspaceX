@@ -1,8 +1,6 @@
 import { checkOrigin, failure, HttpError, success } from "@/lib/auth/http";
 import { requireUser } from "@/lib/auth/session";
-import { acceptInvitation, getInvitation, getWorkspacePlan, setInvitationStatus } from "@/lib/db/accounts";
-import { hasFeature } from "@/lib/billing/plans";
-import { DatabaseError } from "@/lib/db/client";
+import { getInvitation, setInvitationStatus } from "@/lib/db/accounts";
 
 export const runtime = "nodejs";
 

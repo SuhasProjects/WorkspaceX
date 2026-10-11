@@ -1,10 +1,11 @@
-import type { Widget, Workspace } from "@/types/contracts";
+import type { Account, Widget, Workspace } from "@/types/contracts";
 import { TEST_WIDGETS } from "@/components/widget-engine";
 
 const sampleHtml = (id: string) => TEST_WIDGETS.find((w) => w.id === id)?.html ?? "";
 
 // Removable Phase 1 fixtures; no authentication or persistence is simulated.
-export const mockWorkspace: Workspace = { id: "launch-team", name: "Launch team", role: "admin", plan: "free", subscription: { plan: "free", status: "none", updatedAt: "2026-10-11T16:00:00.000Z" } };
+export const mockAccount: Account = { id: "00000000-0000-4000-8000-000000000000", username: "preview", plan: "free", subscription: { plan: "free", status: "none", updatedAt: "2026-10-11T16:00:00.000Z" } };
+export const mockWorkspace: Workspace = { id: "launch-team", name: "Launch team", role: "owner", ownerId: mockAccount.id, plan: "free" };
 const timestamp = "2026-10-11T16:00:00.000Z";
 export const mockWidgets: Widget[] = [
   { id: "sample-poll", title: "What should we build next?", html: sampleHtml("test-poll"), size: "small", createdAt: timestamp },

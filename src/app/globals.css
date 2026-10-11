@@ -537,3 +537,48 @@ body { font-family: var(--wz-font-body); }
 .plan-badge.plan-pro, .plan-badge.plan-team { color: var(--wz-accent); border-color: var(--wz-accent); }
 .plan-badge-cta { padding: 1px 6px; border-radius: 999px; background: var(--wz-accent); color: var(--wz-accent-text); font-size: 9px; letter-spacing: .06em; text-transform: uppercase; }
 @media (max-width: 600px) { .plan-badge { display: none; } }
+
+/* ---- Account access (login / signup) ---- */
+.access-lede { color: var(--wz-muted); font-size: 14px; margin: 6px 0 18px; }
+.access-form { display: grid; gap: 12px; }
+.access-form label { display: grid; gap: 6px; font-size: 12px; color: var(--wz-muted); }
+.access-form input { padding: 11px 12px; background: var(--inset); border: 1px solid var(--wz-border); border-radius: 3px; color: var(--wz-text); font: inherit; }
+.access-form input:focus { outline: none; border-color: var(--wz-accent); }
+.access-hint { font-size: 11px; color: var(--wz-muted); }
+.access-footnote { margin-top: 16px; font-size: 11px; color: var(--wz-muted); line-height: 1.6; }
+
+/* ---- Account / workspace menu ---- */
+.account-menu { position: relative; }
+.account-menu-trigger { display: flex; align-items: center; gap: 10px; padding: 4px 10px 4px 4px; border: 1px solid var(--wz-border); border-radius: 3px; background: var(--inset); color: var(--wz-text); font: inherit; cursor: pointer; }
+.account-menu-trigger:hover { background: var(--hover); }
+.account-menu-summary { display: flex; flex-direction: column; align-items: flex-start; line-height: 1.2; text-align: left; }
+.account-menu-summary strong { font-size: 12px; font-weight: 600; }
+.account-menu-summary small { font-size: 10px; color: var(--wz-muted); }
+.account-menu-badge { min-width: 18px; padding: 1px 6px; border-radius: 999px; background: var(--wz-accent); color: var(--wz-accent-text); font-size: 10px; font-weight: 600; text-align: center; }
+.account-menu-panel { position: absolute; right: 0; top: calc(100% + 8px); width: 320px; max-width: calc(100vw - 32px); padding: 8px 0; border: 1px solid var(--wz-border); border-radius: 3px; background: var(--glass); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); box-shadow: var(--glass-shadow); z-index: 40; }
+.account-menu-section { padding: 10px 14px; border-bottom: 1px solid var(--wz-border); }
+.account-menu-section:last-of-type { border-bottom: 0; }
+.account-menu-section .eyebrow { margin-bottom: 8px; }
+.account-menu-line { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 13px; }
+.account-menu-list { list-style: none; margin: 0 0 6px; padding: 0; display: grid; gap: 2px; }
+.account-menu-list button, .account-menu-action { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; padding: 8px 10px; border: 0; border-radius: 3px; background: transparent; color: var(--wz-text); font: inherit; font-size: 13px; text-align: left; cursor: pointer; }
+.account-menu-action { justify-content: flex-start; }
+.account-menu-list button:hover:not(:disabled), .account-menu-action:hover:not(:disabled) { background: var(--hover); }
+.account-menu-list button.is-current { background: var(--inset); color: var(--wz-accent); }
+.account-menu-list button small, .account-menu-action small { color: var(--wz-muted); font-size: 11px; }
+.account-menu-action:disabled { opacity: .6; cursor: default; }
+.account-menu-create { display: flex; gap: 6px; flex-wrap: wrap; }
+.account-menu-create input { flex: 1; min-width: 120px; padding: 7px 10px; background: var(--inset); border: 1px solid var(--wz-border); border-radius: 3px; color: var(--wz-text); font: inherit; font-size: 12px; }
+.account-menu-panel .feedback { margin: 8px 14px 4px; }
+
+/* ---- Members and invitations panels ---- */
+.members-body { padding: 20px 24px 28px; display: grid; gap: 14px; }
+.members-body h2 { font-size: 20px; }
+.members-body h3 { font-size: 14px; margin-top: 8px; }
+.members-list > li { justify-content: space-between; }
+.members-name { display: flex; align-items: baseline; gap: 6px; min-width: 0; }
+.members-name small { color: var(--wz-muted); font-size: 11px; }
+.members-invite { display: flex; gap: 8px; flex-wrap: wrap; }
+.members-invite input, .members-invite select { padding: 8px 10px; background: var(--inset); border: 1px solid var(--wz-border); border-radius: 3px; color: var(--wz-text); font: inherit; font-size: 13px; }
+.members-invite input { flex: 1; min-width: 160px; }
+@media (max-width: 600px) { .account-menu-summary { display: none; } }
