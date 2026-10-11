@@ -27,7 +27,7 @@ export interface CreateWorkspaceRequest {
 export interface LoginRequest { workspaceId: string; password: string }
 export interface CreateTaskRequest { title: string; description?: string; status?: TaskStatus }
 export interface UpdateTaskRequest { title?: string; description?: string; status?: TaskStatus }
-export interface GenerateRequest { prompt: string }
+export interface GenerateRequest { prompt: string; baseHtml?: string }
 export type SaveWidgetRequest = GeneratedWidget;
 export interface StorageQuery { widgetId: string; key: string }
 export interface WriteStorageRequest extends StorageQuery { value: JsonValue }
