@@ -1,5 +1,5 @@
 const WAVE_COUNT = 17;
-const WAVE_SPACING = 26;
+const WAVE_SPACING = 24;
 
 function waveContour(baseline: number, amplitude: number) {
   return `M 0 ${baseline} C 100 ${baseline + amplitude}, 300 ${baseline + amplitude}, 400 ${baseline} C 500 ${baseline - amplitude}, 700 ${baseline - amplitude}, 800 ${baseline} C 900 ${baseline + amplitude}, 1100 ${baseline + amplitude}, 1200 ${baseline} C 1300 ${baseline - amplitude}, 1500 ${baseline - amplitude}, 1600 ${baseline}`;
