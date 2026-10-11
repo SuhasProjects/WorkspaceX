@@ -129,10 +129,10 @@ button, a, textarea, input, select { outline-offset: 4px; }
 svg { flex-shrink: 0; }
 .dashboard-shell { position: relative; isolation: isolate; min-height: 100vh; padding: 24px 32px 0; overflow: clip; }
 .atmosphere { position: absolute; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
-.atmosphere svg { position: absolute; top: -90px; right: -150px; width: max(120%, 1400px); height: 1100px; color: rgba(169, 184, 210, .09); opacity: .68; animation: atmosphere-drift 54s ease-in-out infinite alternate; will-change: transform; }
-@keyframes atmosphere-drift { from { transform: translateX(-22px); } to { transform: translateX(22px); } }
+.atmosphere svg { position: absolute; top: -90px; right: -150px; width: max(120%, 1400px); height: 1100px; color: rgba(169, 184, 210, .16); opacity: .9; animation: atmosphere-drift 22s ease-in-out infinite alternate; will-change: transform; }
+@keyframes atmosphere-drift { from { transform: translate(-180px, -12px); } to { transform: translate(180px, 12px); } }
 .atmosphere::after { content: ""; position: absolute; inset: 0; background: transparent; }
-[data-theme="light"] .atmosphere svg { opacity: .045; }
+[data-theme="light"] .atmosphere svg { opacity: .1; }
 [data-theme="light"] .atmosphere::after { background: transparent; }
 @media (prefers-reduced-motion: reduce) { .atmosphere svg { animation: none; will-change: auto; } }
 .skip-link { position: fixed; top: -80px; left: 24px; padding: 12px 20px; background: var(--wz-surface); z-index: 30; border: 2px solid var(--wz-accent); border-radius: 3px; }
