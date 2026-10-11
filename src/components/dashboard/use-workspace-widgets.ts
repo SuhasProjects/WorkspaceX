@@ -78,6 +78,24 @@ export function useWorkspaceWidgets(preview = false) {
     if (state.status !== "ready") return;
     setState({ ...state, widgets: state.widgets.map((widget) => (widget.id === updated.id ? updated : widget)) });
   }
+  /** Creates an independent copy of a widget without copying its shared storage. */
+  async function duplicateWidget(id: string): Promise<string | null> {
+    if (state.status !== "ready") return "Not ready.";
+    const source = state.widgets.find((widget) => widget.id === id);
+    if (!source) return "The tool could not be found.";
+    const copySuffix = " copy";
+    const title = `${source.title.slice(0, 120 - copySuffix.length).trimEnd()}${copySuffix}`;
+    const response = await fetch("/api/widgets", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "same-origin",
+      body: JSON.stringify({ title, html: source.html, size: source.size }),
+    });
+    const result = (await response.json().catch(() => null)) as ApiResponse<{ widget: Widget }> | null;
+    if (!response.ok || !result?.data) return result?.error?.message ?? "The tool could not be duplicated.";
+    setState({ ...state, widgets: [...state.widgets, result.data.widget] });
+    return null;
+  }
   /** Deletes a widget and its shared data (admin only; the server enforces this). */
   async function removeWidget(id: string): Promise<string | null> {
     if (state.status !== "ready") return "Not ready.";
@@ -104,7 +122,7 @@ export function useWorkspaceWidgets(preview = false) {
   /** Saves a drag-resized footprint for everyone in the workspace. */
   function updateWidgetSpan(id: string, span: WidgetSpan) { return patchWidget(id, { span }); }
   const resolvedState: WorkspaceState = preview ? { status: "ready", workspace: mockWorkspace, widgets: previewWidgets } : state;
-  return { state: resolvedState, retry, reorderWidget, removeWidget, updateWidget, updateWidgetSize, updateWidgetSpan };
+  return { state: resolvedState, retry, reorderWidget, removeWidget, duplicateWidget, updateWidget, updateWidgetSize, updateWidgetSpan };
 }
 
 function previewSnapshot(): string | null {

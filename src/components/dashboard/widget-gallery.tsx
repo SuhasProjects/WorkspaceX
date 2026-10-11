@@ -19,6 +19,7 @@ interface WidgetGalleryProps {
   theme: WidgetTheme;
   isAdmin: boolean;
   onDelete: (id: string) => Promise<string | null>;
+  onDuplicate: (id: string) => Promise<string | null>;
   onSize: (id: string, size: WidgetSize) => Promise<string | null>;
   onSpan: (id: string, span: WidgetSpan) => Promise<string | null>;
   onUpdate: (widget: Widget) => void;
@@ -26,7 +27,7 @@ interface WidgetGalleryProps {
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 
-export function WidgetGallery({ widgets, workspaceId, theme, isAdmin, onDelete, onSize, onSpan, onUpdate }: WidgetGalleryProps) {
+export function WidgetGallery({ widgets, workspaceId, theme, isAdmin, onDelete, onDuplicate, onSize, onSpan, onUpdate }: WidgetGalleryProps) {
   const [editingTool, setEditingTool] = useState<string | null>(null);
   // Live span while a card is being dragged; cleared once the server confirms.
   const [dragSpan, setDragSpan] = useState<{ id: string; span: WidgetSpan } | null>(null);
@@ -74,7 +75,7 @@ export function WidgetGallery({ widgets, workspaceId, theme, isAdmin, onDelete, 
       const span = spanOf(widget);
       return <article className={`widget-card${dragSpan?.id === widget.id ? " is-resizing" : ""}`} key={widget.id} style={{ gridColumn: `span ${span.cols}`, gridRow: `span ${span.rows}` }}>
         <header className="widget-card-header"><div><span className="widget-size-badge">{span.cols}×{span.rows}</span><h3>{widget.title}</h3></div></header>
-        {isAdmin && <ToolManageBar widget={widget} onDelete={onDelete} onSize={onSize} onDeleted={() => setEditingTool(null)} editing={editingTool === widget.id} onEdit={() => setEditingTool(editingTool === widget.id ? null : widget.id)} />}
+        {isAdmin && <ToolManageBar widget={widget} onDelete={onDelete} onDuplicate={onDuplicate} onSize={onSize} onDeleted={() => setEditingTool(null)} editing={editingTool === widget.id} onEdit={() => setEditingTool(editingTool === widget.id ? null : widget.id)} />}
         {isAdmin && editingTool === widget.id
           ? <ToolEditor key={widget.id} widget={widget} workspaceId={workspaceId} theme={theme} onClose={() => setEditingTool(null)} onSaved={(saved) => { onUpdate(saved); setEditingTool(null); }} />
           : <WidgetRenderer key={`${workspaceId}:${widget.id}:${widget.html.length}`} widgetId={widget.id} workspaceId={workspaceId} html={widget.html} theme={theme} title={widget.title} className="widget-card-frame" />}

@@ -42,7 +42,7 @@ export function Dashboard() {
   const [preview, setPreview] = useState<GeneratedWidget | null>(null);
   const [builderOpen, setBuilderOpen] = useState(false);
   const theme = useWidgetTheme();
-  const { state, retry, reorderWidget, removeWidget, updateWidget, updateWidgetSize, updateWidgetSpan } = useWorkspaceWidgets();
+  const { state, retry, reorderWidget, removeWidget, duplicateWidget, updateWidget, updateWidgetSize, updateWidgetSpan } = useWorkspaceWidgets();
   const [editingTool, setEditingTool] = useState<string | null>(null);
   const [orderError, setOrderError] = useState("");
   const [dragging, setDragging] = useState<string | null>(null);
@@ -165,12 +165,12 @@ export function Dashboard() {
         {workspace.role === "admin" && <a href="#tool-builder" className="workspace-tab-action" onClick={() => { setActiveTool(null); setBuilderOpen(true); }}><Icon name="plus" size={14} />New tool</a>}
       </section>
       {activeWidget ? <section className="tool-pane" aria-label={activeWidget.title}>
-        {workspace.role === "admin" && <ToolManageBar widget={activeWidget} onDelete={removeWidget} onSize={changeWidgetSize} onDeleted={() => setActiveTool(null)} editing={editingTool === activeWidget.id} onEdit={() => setEditingTool(editingTool === activeWidget.id ? null : activeWidget.id)} />}
+        {workspace.role === "admin" && <ToolManageBar widget={activeWidget} onDelete={removeWidget} onDuplicate={duplicateWidget} onSize={changeWidgetSize} onDeleted={() => setActiveTool(null)} editing={editingTool === activeWidget.id} onEdit={() => setEditingTool(editingTool === activeWidget.id ? null : activeWidget.id)} />}
         {orderError && <p className="widget-tools-confirm" role="alert">{orderError}</p>}
         {workspace.role === "admin" && editingTool === activeWidget.id
           ? <ToolEditor key={activeWidget.id} widget={activeWidget} workspaceId={workspace.id} theme={theme} onClose={() => setEditingTool(null)} onSaved={(saved) => { updateWidget(saved); setEditingTool(null); }} />
           : <WidgetRenderer key={`${workspace.id}:${activeWidget.id}:${activeWidget.html.length}`} widgetId={activeWidget.id} workspaceId={workspace.id} html={activeWidget.html} theme={theme} title={activeWidget.title} className="tool-pane-frame" />}
-      </section> : showingGallery ? <WidgetGallery widgets={compactWidgets} workspaceId={workspace.id} theme={theme} isAdmin={workspace.role === "admin"} onSpan={updateWidgetSpan} onDelete={removeWidget} onSize={changeWidgetSize} onUpdate={updateWidget} /> : <div className="dashboard-grid"><div className="workspace-content"><div className="overview-grid"><Calendar tasks={tasks} selectedDueDate={selectedDueDate} onSelectDueDate={setSelectedDueDate} /><TodoList tasks={tasks} canEdit={workspace.role === "admin" && !taskBusy} selectedDueDate={selectedDueDate} onClearDate={() => setSelectedDueDate(null)} onToggle={toggleTask} /></div><TaskBoard tasks={tasks} canEdit={workspace.role === "admin"} busy={taskBusy} message={taskMessage} onCreate={createTask} onUpdate={updateTask} onStatus={(id, status) => void updateTaskStatus(id, status)} onDelete={(id) => void deleteTask(id)} />
+      </section> : showingGallery ? <WidgetGallery widgets={compactWidgets} workspaceId={workspace.id} theme={theme} isAdmin={workspace.role === "admin"} onSpan={updateWidgetSpan} onDelete={removeWidget} onDuplicate={duplicateWidget} onSize={changeWidgetSize} onUpdate={updateWidget} /> : <div className="dashboard-grid"><div className="workspace-content"><div className="overview-grid"><Calendar tasks={tasks} selectedDueDate={selectedDueDate} onSelectDueDate={setSelectedDueDate} /><TodoList tasks={tasks} canEdit={workspace.role === "admin" && !taskBusy} selectedDueDate={selectedDueDate} onClearDate={() => setSelectedDueDate(null)} onToggle={toggleTask} /></div><TaskBoard tasks={tasks} canEdit={workspace.role === "admin"} busy={taskBusy} message={taskMessage} onCreate={createTask} onUpdate={updateTask} onStatus={(id, status) => void updateTaskStatus(id, status)} onDelete={(id) => void deleteTask(id)} />
       </div>{workspace.role === "admin" && <AIBuilderPanel isAdmin referenceOptions={widgets.map(({ id, title }) => ({ id, title }))} expanded={builderOpen} onToggle={() => setBuilderOpen((current) => !current)} workspaceId={workspace.id} theme={theme} preview={preview} onGenerate={generate} onSave={save} onDiscard={() => setPreview(null)} />}</div>}
       <footer className="dashboard-footer"><span>WorkspaceZero · Small software. Shared workspace.</span><span>AI tools, shared with your team</span></footer>
     </main>

@@ -20,6 +20,7 @@ interface TaskBoardProps {
 }
 
 export function TaskBoard({ tasks, canEdit, busy, message, onCreate, onUpdate, onStatus, onDelete }: TaskBoardProps) {
+  const [creating, setCreating] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [dueDate, setDueDate] = useState("");
@@ -32,17 +33,28 @@ export function TaskBoard({ tasks, canEdit, busy, message, onCreate, onUpdate, o
       setDescription("");
       setDueDate("");
       setDueTime("");
+      setCreating(false);
     }
   }
 
+  function cancelCreate() {
+    setTitle("");
+    setDescription("");
+    setDueDate("");
+    setDueTime("");
+    setCreating(false);
+  }
+
   return <section className="section-block" aria-labelledby="tasks-heading">
-    <div className="section-heading"><div><h2 id="tasks-heading">Team tasks <span className="count-badge">{tasks.length}</span></h2></div><span className="section-note">Shared with your team</span></div>
-    {canEdit && <form className="task-create" onSubmit={submit}>
-      <input value={title} onChange={(event) => setTitle(event.target.value)} maxLength={120} required placeholder="Add a task" aria-label="Task title" />
-      <input value={description} onChange={(event) => setDescription(event.target.value)} maxLength={2000} placeholder="Optional details" aria-label="Task description" />
-      <input type="date" value={dueDate} onChange={(event) => { setDueDate(event.target.value); if (!event.target.value) setDueTime(""); }} aria-label="Task due date" />
-      <input type="time" value={dueTime} onChange={(event) => setDueTime(event.target.value)} aria-label="Task due time" disabled={!dueDate} />
-      <button type="submit" disabled={busy || !title.trim()}><Icon name="plus" size={14} />{busy ? "Saving…" : "Add task"}</button>
+    <div className="section-heading"><div><h2 id="tasks-heading">Team tasks <span className="count-badge">{tasks.length}</span></h2></div>{canEdit ? <button type="button" className="task-create-toggle" aria-expanded={creating} aria-controls="task-create-form" onClick={() => setCreating((current) => !current)}><Icon name={creating ? "close" : "plus"} size={14} />{creating ? "Close" : "Create task"}</button> : <span className="section-note">Shared with your team</span>}</div>
+    {canEdit && creating && <form id="task-create-form" className="task-create" onSubmit={submit}>
+      <label><span className="task-field-label">Task name</span><input value={title} onChange={(event) => setTitle(event.target.value)} maxLength={120} required placeholder="What needs to be done?" autoFocus /></label>
+      <label><span className="task-field-label">Details <small>Optional</small></span><textarea value={description} onChange={(event) => setDescription(event.target.value)} maxLength={2000} rows={3} placeholder="Add context for your team" /></label>
+      <div className="task-create-schedule">
+        <label><span className="task-field-label">Due date <small>Optional</small></span><input type="date" value={dueDate} onChange={(event) => { setDueDate(event.target.value); if (!event.target.value) setDueTime(""); }} /></label>
+        <label><span className="task-field-label">Due time <small>Optional</small></span><input type="time" value={dueTime} onChange={(event) => setDueTime(event.target.value)} disabled={!dueDate} /></label>
+      </div>
+      <div className="task-create-actions"><button type="button" disabled={busy} onClick={cancelCreate}>Cancel</button><button type="submit" disabled={busy || !title.trim()}><Icon name="plus" size={14} />{busy ? "Saving…" : "Create task"}</button></div>
     </form>}
     {message && <p className="feedback error" role="alert">{message}</p>}
     <div className="task-columns">{columns.map(({ status, title: columnTitle }) => {
