@@ -47,6 +47,7 @@ export function Atmosphere() {
                 {waves.slice(0, -1).map((wave, index) => (
                   <path
                     key={`band-${index}`}
+                    className="atmosphere-band"
                     d={waveBand(wave.index, waves[index + 1].index, center)}
                     fill="currentColor"
                     fillOpacity=".28"

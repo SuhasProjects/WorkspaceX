@@ -142,6 +142,7 @@ svg { flex-shrink: 0; }
 @keyframes atmosphere-breath { from { transform: scaleY(.72); } to { transform: scaleY(1.42); } }
 .atmosphere::after { content: ""; position: absolute; inset: 0; background: transparent; }
 [data-theme="light"] .atmosphere svg { color: rgba(95, 106, 124, .3); opacity: .66; }
+[data-theme="light"] .atmosphere .atmosphere-band { fill-opacity: .14; }
 [data-theme="light"] .atmosphere::after { background: transparent; }
 @media (prefers-reduced-motion: reduce) { .atmosphere-track, .atmosphere-breath { animation: none; will-change: auto; } }
 @media (prefers-reduced-motion: reduce) { ::view-transition-group(workspace-dashboard-panel), ::view-transition-old(workspace-dashboard-panel), ::view-transition-new(workspace-dashboard-panel) { animation: none; } }
