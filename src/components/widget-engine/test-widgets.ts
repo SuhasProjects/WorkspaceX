@@ -64,6 +64,70 @@ export const TEST_WIDGETS: TestWidget[] = [
 </script>`,
   },
   {
+    id: "test-expenses",
+    title: "Expense tracker (shared list + personal filter + form)",
+    html: `<!DOCTYPE html><html><head><title>Team Expenses</title><style>
+  form{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+  table{width:100%;border-collapse:collapse} td{padding:4px;border-bottom:1px solid var(--wz-border)}
+  label{margin-right:8px;color:var(--wz-muted)}
+</style></head><body>
+<form id="f">
+  <input name="desc" placeholder="Description" required>
+  <input name="amount" type="number" step="0.01" min="0" placeholder="Amount" required>
+  <select name="cat"><option>Food</option><option>Travel</option><option>Software</option></select>
+  <button>Add</button>
+</form>
+<div id="filters"></div><table id="t"></table><p id="total"></p><p id="err" style="color:var(--wz-danger)"></p>
+<script>
+  const CATS = ["Food", "Travel", "Software"];
+  let expenses = [], hidden = [];
+  const err = (e) => { document.getElementById("err").textContent = e ? "Error: " + e.message : ""; };
+  function render() {
+    const shown = expenses.filter((x) => !hidden.includes(x.cat));
+    document.getElementById("t").innerHTML = shown.map((x) =>
+      "<tr><td>" + x.desc.replace(/</g, "&lt;") + "</td><td>" + x.cat + "</td><td>$" + x.amount.toFixed(2) + "</td></tr>").join("");
+    document.getElementById("total").textContent =
+      "Shown: $" + shown.reduce((s, x) => s + x.amount, 0).toFixed(2) + " of $" + expenses.reduce((s, x) => s + x.amount, 0).toFixed(2);
+    document.getElementById("filters").innerHTML = CATS.map((c) =>
+      '<label><input type="checkbox" data-cat="' + c + '"' + (hidden.includes(c) ? "" : " checked") + "> " + c + "</label>").join("");
+  }
+  document.getElementById("filters").addEventListener("change", async (e) => {
+    const c = e.target.dataset.cat;
+    hidden = e.target.checked ? hidden.filter((h) => h !== c) : [...hidden, c];
+    render();
+    try { await workspace.setPersonal("hiddenCategories", hidden); err(); } catch (e) { err(e); }
+  });
+  document.getElementById("f").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    try {
+      expenses = (await workspace.getShared("expenses")) || [];
+      expenses.push({ desc: String(fd.get("desc")), amount: Number(fd.get("amount")), cat: String(fd.get("cat")) });
+      await workspace.setShared("expenses", expenses);
+      e.target.reset(); err(); render();
+    } catch (e2) { err(e2); }
+  });
+  (async () => {
+    try {
+      expenses = (await workspace.getShared("expenses")) || [];
+      hidden = (await workspace.getPersonal("hiddenCategories")) || [];
+    } catch (e) { err(e); }
+    render();
+  })();
+</script></body></html>`,
+  },
+  {
+    id: "test-sloppy",
+    title: "Sloppy AI habits (alert + localStorage)",
+    html: `<button id="b">Say hi</button><p id="o"></p>
+<script>
+  const visits = Number(localStorage.getItem("visits") || 0) + 1;
+  localStorage.setItem("visits", String(visits));
+  document.getElementById("o").textContent = "Started without crashing (visits this session: " + visits + ")";
+  document.getElementById("b").onclick = () => alert("Hello from inside the sandbox!");
+</script>`,
+  },
+  {
     id: "test-counter",
     title: "Counter (interaction + theme)",
     html: `<!DOCTYPE html><html><head><style>

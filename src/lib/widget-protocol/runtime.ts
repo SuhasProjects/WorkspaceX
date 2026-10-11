@@ -52,6 +52,83 @@ const RUNTIME_SOURCE = `(function () {
     report("Blocked by widget sandbox: " + e.effectiveDirective + " " + (e.blockedURI || ""));
   });
 
+  // --- Compatibility for habits common in generated code -------------------
+
+  // The sandbox silently ignores alert(); show it inside the widget instead.
+  function showToast(text) {
+    var el = document.createElement("div");
+    el.textContent = String(text);
+    el.setAttribute("role", "status");
+    el.style.cssText = "position:fixed;left:50%;bottom:12px;transform:translateX(-50%);" +
+      "max-width:90%;z-index:2147483647;padding:8px 14px;border-radius:8px;" +
+      "background:var(--wz-text);color:var(--wz-background);font:13px system-ui,sans-serif;" +
+      "box-shadow:0 4px 12px rgba(0,0,0,.25)";
+    (document.body || document.documentElement).appendChild(el);
+    setTimeout(function () { el.remove(); }, 3000);
+  }
+  try { window.alert = function (m) { showToast(m === undefined ? "" : m); }; } catch (_) {}
+
+  // Opaque-origin frames throw on localStorage access, which would crash the
+  // widget at startup. Substitute a memory store (not persisted).
+  function makeMemoryStorage() {
+    var data = {};
+    return {
+      getItem: function (k) {
+        k = String(k);
+        return Object.prototype.hasOwnProperty.call(data, k) ? data[k] : null;
+      },
+      setItem: function (k, v) { data[String(k)] = String(v); },
+      removeItem: function (k) { delete data[String(k)]; },
+      clear: function () { data = {}; },
+      key: function (i) { var keys = Object.keys(data); return i < keys.length ? keys[i] : null; },
+      get length() { return Object.keys(data).length; }
+    };
+  }
+  ["localStorage", "sessionStorage"].forEach(function (name) {
+    var works = false;
+    try { works = !!window[name]; } catch (_) {}
+    if (!works) {
+      try { Object.defineProperty(window, name, { value: makeMemoryStorage(), configurable: true }); } catch (_) {}
+    }
+  });
+
+  // Without allow-forms the browser never fires "submit". Recreate the event so
+  // widgets written with <form onsubmit> still work; real submission stays blocked.
+  function fireSubmit(form, submitter) {
+    if (typeof form.reportValidity === "function" && !form.reportValidity()) return;
+    var event;
+    try {
+      event = new SubmitEvent("submit", { bubbles: true, cancelable: true, submitter: submitter || null });
+    } catch (_) {
+      event = new Event("submit", { bubbles: true, cancelable: true });
+    }
+    form.dispatchEvent(event);
+  }
+  document.addEventListener("click", function (e) {
+    var t = e.target && e.target.closest ? e.target.closest("button, input[type=submit], input[type=image]") : null;
+    if (!t || !t.form || t.disabled || e.defaultPrevented) return;
+    var type = (t.getAttribute("type") || "submit").toLowerCase();
+    if (t.tagName === "BUTTON" && type !== "submit") return;
+    fireSubmit(t.form, t);
+  });
+  // Enter in a field: with a submit button the browser clicks it for us (handled
+  // above), so only forms without one need help here.
+  document.addEventListener("keydown", function (e) {
+    if (e.key !== "Enter" || e.defaultPrevented || e.isComposing) return;
+    var t = e.target;
+    if (!t || t.tagName !== "INPUT" || !t.form) return;
+    var skip = ["button", "checkbox", "radio", "reset", "file", "color", "range", "submit", "image"];
+    if (skip.indexOf((t.type || "").toLowerCase()) >= 0) return;
+    if (t.form.querySelector("button:not([type]), button[type=submit], input[type=submit], input[type=image]")) return;
+    e.preventDefault();
+    fireSubmit(t.form, null);
+  });
+  try {
+    HTMLFormElement.prototype.requestSubmit = function (submitter) { fireSubmit(this, submitter); };
+  } catch (_) {}
+
+  // --- Storage requests ------------------------------------------------------
+
   var pending = {};
   var counter = 0;
 
