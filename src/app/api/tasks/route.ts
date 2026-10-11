@@ -17,9 +17,10 @@ export async function POST(request: Request) {
     checkOrigin(request);
     const session = await requireSession("admin");
     const body = await readJsonObject(request);
-    onlyFields(body, ["title", "description", "dueDate", "status"]);
+    onlyFields(body, ["title", "description", "dueDate", "dueTime", "status"]);
     if (typeof body.title !== "string" || (body.description !== undefined && typeof body.description !== "string") ||
         (body.dueDate !== undefined && typeof body.dueDate !== "string") ||
+        (body.dueTime !== undefined && typeof body.dueTime !== "string") ||
         (body.status !== undefined && typeof body.status !== "string")) {
       throw new HttpError(400, "INVALID_INPUT", "A task title and valid optional fields are required.");
     }
@@ -27,6 +28,7 @@ export async function POST(request: Request) {
       title: body.title,
       ...(body.description === undefined ? {} : { description: body.description }),
       ...(body.dueDate === undefined ? {} : { dueDate: body.dueDate }),
+      ...(body.dueTime === undefined ? {} : { dueTime: body.dueTime }),
       ...(body.status === undefined ? {} : { status: body.status as never }),
     });
     return success({ task }, 201);

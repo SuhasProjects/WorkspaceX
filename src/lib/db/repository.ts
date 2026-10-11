@@ -31,6 +31,7 @@ interface TaskRecord {
   title: string;
   description?: string;
   dueDate?: string;
+  dueTime?: string;
   status: TaskStatus;
   createdAt: Date;
   updatedAt: Date;
@@ -81,6 +82,13 @@ function checkedDueDate(dueDate: string | undefined): string | undefined {
   }
   return dueDate;
 }
+function checkedDueTime(dueTime: string | undefined): string | undefined {
+  if (dueTime === undefined || dueTime === "") return undefined;
+  if (!/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(dueTime)) {
+    throw new DatabaseError("INVALID_INPUT", "Due time must use 24-hour HH:mm format.");
+  }
+  return dueTime;
+}
 function checkTaskId(id: string): void {
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) {
     throw new DatabaseError("INVALID_INPUT", "Invalid task ID.");
@@ -92,6 +100,7 @@ function publicTask(record: TaskRecord): Task {
     title: record.title,
     ...(record.description === undefined ? {} : { description: record.description }),
     ...(record.dueDate === undefined ? {} : { dueDate: record.dueDate }),
+    ...(record.dueTime === undefined ? {} : { dueTime: record.dueTime }),
     status: record.status,
     createdAt: record.createdAt.toISOString(),
     updatedAt: record.updatedAt.toISOString(),
@@ -194,9 +203,10 @@ export async function listTasks(workspaceId: string): Promise<Task[]> {
 
 export async function createTask(
   workspaceId: string,
-  input: { title: string; description?: string; dueDate?: string; status?: TaskStatus },
+  input: { title: string; description?: string; dueDate?: string; dueTime?: string; status?: TaskStatus },
 ): Promise<Task> {
   checkWorkspaceId(workspaceId);
+  if (input.dueTime !== undefined && !input.dueDate) throw new DatabaseError("INVALID_INPUT", "A due time requires a due date.");
   if (!(await getWorkspace(workspaceId))) throw new DatabaseError("NOT_FOUND", "Workspace not found.");
   const now = new Date();
   const record: TaskRecord = {
@@ -205,6 +215,7 @@ export async function createTask(
     title: checkedTitle(input.title),
     ...(input.description === undefined ? {} : { description: checkedDescription(input.description) }),
     ...(input.dueDate === undefined ? {} : { dueDate: checkedDueDate(input.dueDate) }),
+    ...(input.dueTime === undefined ? {} : { dueTime: checkedDueTime(input.dueTime) }),
     status: checkedStatus(input.status),
     createdAt: now,
     updatedAt: now,
@@ -217,15 +228,18 @@ export async function createTask(
 export async function updateTask(workspaceId: string, taskId: string, input: UpdateTaskRequest): Promise<Task | null> {
   checkWorkspaceId(workspaceId);
   checkTaskId(taskId);
-  const changes: Partial<Pick<TaskRecord, "title" | "description" | "dueDate" | "status">> & { updatedAt: Date } = { updatedAt: new Date() };
+  const changes: Partial<Pick<TaskRecord, "title" | "description" | "dueDate" | "dueTime" | "status">> & { updatedAt: Date } = { updatedAt: new Date() };
   if (input.title !== undefined) changes.title = checkedTitle(input.title);
   if (input.description !== undefined) changes.description = checkedDescription(input.description);
-  if (input.dueDate !== undefined) changes.dueDate = checkedDueDate(input.dueDate);
+  const clearDueDate = input.dueDate === null || input.dueDate === "";
+  if (typeof input.dueDate === "string" && !clearDueDate) changes.dueDate = checkedDueDate(input.dueDate);
+  const clearDueTime = clearDueDate || input.dueTime === null || input.dueTime === "";
+  if (typeof input.dueTime === "string" && !clearDueTime) changes.dueTime = checkedDueTime(input.dueTime);
   if (input.status !== undefined) changes.status = checkedStatus(input.status);
   const db = await getDatabase();
   const record = await db.collection<TaskRecord>("tasks").findOneAndUpdate(
     { _id: taskId, workspaceId },
-    { $set: changes },
+    { $set: changes, ...((clearDueDate || clearDueTime) ? { $unset: { ...(clearDueDate ? { dueDate: "" } : {}), ...(clearDueTime ? { dueTime: "" } : {}) } } : {}) },
     { returnDocument: "after" },
   );
   return record ? publicTask(record) : null;

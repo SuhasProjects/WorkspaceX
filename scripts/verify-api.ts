@@ -9,6 +9,16 @@ const secondId = `verify-${randomUUID()}`;
 let savedWidgetId = "";
 let stage = "create";
 
+interface VerificationResponse {
+  error: { code?: string };
+  data: {
+    workspace: { role: string };
+    widget: { id: string };
+    value: unknown;
+    widgets: unknown[];
+  };
+}
+
 async function call(path: string, method = "GET", body?: unknown, cookie?: string) {
   const response = await fetch(base + path, {
     method,
@@ -17,7 +27,7 @@ async function call(path: string, method = "GET", body?: unknown, cookie?: strin
     body: body === undefined ? undefined : JSON.stringify(body),
     cache: "no-store",
   });
-  return { status: response.status, json: await response.json() as Record<string, any>,
+  return { status: response.status, json: await response.json() as VerificationResponse,
     cookie: response.headers.get("set-cookie")?.split(";")[0] ?? "" };
 }
 

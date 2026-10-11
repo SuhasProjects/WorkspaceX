@@ -16,10 +16,11 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     checkOrigin(request);
     const session = await requireSession("admin");
     const body = await readJsonObject(request);
-    onlyFields(body, ["title", "description", "dueDate", "status"]);
+    onlyFields(body, ["title", "description", "dueDate", "dueTime", "status"]);
     if (!Object.keys(body).length || (body.title !== undefined && typeof body.title !== "string") ||
         (body.description !== undefined && typeof body.description !== "string") ||
-        (body.dueDate !== undefined && typeof body.dueDate !== "string") ||
+        (body.dueDate !== undefined && body.dueDate !== null && typeof body.dueDate !== "string") ||
+        (body.dueTime !== undefined && body.dueTime !== null && typeof body.dueTime !== "string") ||
         (body.status !== undefined && typeof body.status !== "string")) {
       throw new HttpError(400, "INVALID_INPUT", "Provide at least one valid task field.");
     }

@@ -10,6 +10,7 @@ export interface Task {
   title: string;
   description?: string;
   dueDate?: string;
+  dueTime?: string;
   status: TaskStatus;
   createdAt: string;
   updatedAt: string;
@@ -26,8 +27,8 @@ export interface CreateWorkspaceRequest {
   memberPassword: string;
 }
 export interface LoginRequest { workspaceId: string; password: string }
-export interface CreateTaskRequest { title: string; description?: string; dueDate?: string; status?: TaskStatus }
-export interface UpdateTaskRequest { title?: string; description?: string; dueDate?: string; status?: TaskStatus }
+export interface CreateTaskRequest { title: string; description?: string; dueDate?: string; dueTime?: string; status?: TaskStatus }
+export interface UpdateTaskRequest { title?: string; description?: string; dueDate?: string | null; dueTime?: string | null; status?: TaskStatus }
 export interface GenerateRequest { prompt: string; baseHtml?: string }
 export type SaveWidgetRequest = GeneratedWidget;
 export interface StorageQuery { widgetId: string; key: string }
