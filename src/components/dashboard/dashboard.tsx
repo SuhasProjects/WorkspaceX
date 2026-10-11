@@ -13,6 +13,7 @@ import { WorkspaceHeader } from "./workspace-header";
 import { setWidgetTheme, useWidgetTheme, useWorkspaceWidgets } from "./use-workspace-widgets";
 import { Atmosphere } from "./atmosphere";
 import { ToolManageBar } from "./tool-manage-bar";
+import { ToolEditor } from "./tool-editor";
 import { WidgetRenderer } from "./widget-renderer-adapter";
 import { setActiveTool, useActiveTool } from "./use-active-tool";
 
@@ -38,7 +39,9 @@ export function Dashboard() {
   const [preview, setPreview] = useState<GeneratedWidget | null>(null);
   const [builderOpen, setBuilderOpen] = useState(false);
   const theme = useWidgetTheme();
-  const { state, retry, reorderWidget, removeWidget } = useWorkspaceWidgets();
+  const { state, retry, reorderWidget, removeWidget, updateWidget } = useWorkspaceWidgets();
+  const [editingTool, setEditingTool] = useState<string | null>(null);
+  const [orderError, setOrderError] = useState("");
   const [dragging, setDragging] = useState<string | null>(null);
   const [dropTarget, setDropTarget] = useState<string | null>(null);
   const workspaceId = state.status === "ready" ? state.workspace.id : null;
@@ -137,15 +140,18 @@ export function Dashboard() {
             onDragStart={(event) => { event.dataTransfer.effectAllowed = "move"; event.dataTransfer.setData("text/plain", widget.id); setDragging(widget.id); }}
             onDragOver={(event) => { if (!dragging) return; event.preventDefault(); event.dataTransfer.dropEffect = "move"; if (dropTarget !== widget.id) setDropTarget(widget.id); }}
             onDragLeave={() => { if (dropTarget === widget.id) setDropTarget(null); }}
-            onDrop={(event) => { event.preventDefault(); if (dragging) reorderWidget(dragging, widget.id); setDragging(null); setDropTarget(null); }}
+            onDrop={(event) => { event.preventDefault(); if (dragging) void reorderWidget(dragging, widget.id).then((message) => setOrderError(message ?? "")); setDragging(null); setDropTarget(null); }}
             onDragEnd={() => { setDragging(null); setDropTarget(null); }}
             title={workspace.role === "admin" ? "Drag to reorder" : undefined}>{widget.title}</a>)}
         </nav>
         {workspace.role === "admin" && <a href="#tool-builder" className="workspace-tab-action" onClick={() => { setActiveTool(null); setBuilderOpen(true); }}><Icon name="plus" size={14} />New tool</a>}
       </section>
       {activeWidget ? <section className="tool-pane" aria-label={activeWidget.title}>
-        {workspace.role === "admin" && <ToolManageBar widget={activeWidget} onDelete={removeWidget} onDeleted={() => setActiveTool(null)} />}
-        <WidgetRenderer key={`${workspace.id}:${activeWidget.id}`} widgetId={activeWidget.id} workspaceId={workspace.id} html={activeWidget.html} theme={theme} title={activeWidget.title} className="tool-pane-frame" />
+        {workspace.role === "admin" && <ToolManageBar widget={activeWidget} onDelete={removeWidget} onDeleted={() => setActiveTool(null)} editing={editingTool === activeWidget.id} onEdit={() => setEditingTool(editingTool === activeWidget.id ? null : activeWidget.id)} />}
+        {orderError && <p className="widget-tools-confirm" role="alert">{orderError}</p>}
+        {workspace.role === "admin" && editingTool === activeWidget.id
+          ? <ToolEditor key={activeWidget.id} widget={activeWidget} workspaceId={workspace.id} theme={theme} onClose={() => setEditingTool(null)} onSaved={(saved) => { updateWidget(saved); setEditingTool(null); }} />
+          : <WidgetRenderer key={`${workspace.id}:${activeWidget.id}:${activeWidget.html.length}`} widgetId={activeWidget.id} workspaceId={workspace.id} html={activeWidget.html} theme={theme} title={activeWidget.title} className="tool-pane-frame" />}
       </section> : <div className="dashboard-grid"><div className="workspace-content"><div className="overview-grid"><Calendar tasks={tasks} selectedDueDate={selectedDueDate} onSelectDueDate={setSelectedDueDate} /><TodoList tasks={tasks} canEdit={workspace.role === "admin" && !taskBusy} selectedDueDate={selectedDueDate} onClearDate={() => setSelectedDueDate(null)} onToggle={toggleTask} /></div><TaskBoard tasks={tasks} canEdit={workspace.role === "admin"} busy={taskBusy} message={taskMessage} onCreate={createTask} onStatus={(id, status) => void updateTaskStatus(id, status)} onDelete={(id) => void deleteTask(id)} />
       </div>{workspace.role === "admin" && <AIBuilderPanel isAdmin expanded={builderOpen} onToggle={() => setBuilderOpen((current) => !current)} workspaceId={workspace.id} theme={theme} preview={preview} onGenerate={generate} onSave={save} onDiscard={() => setPreview(null)} />}</div>}
       <footer className="dashboard-footer"><span>WorkspaceZero · Small software. Shared workspace.</span><span>AI tools, shared with your team</span></footer>

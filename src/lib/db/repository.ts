@@ -10,6 +10,8 @@ interface WorkspaceRecord {
   adminPasswordHash: string;
   memberPasswordHash: string;
   createdAt: Date;
+  /** Admin-chosen tab order; widgets not listed follow in creation order. */
+  widgetOrder?: string[];
 }
 interface WidgetRecord {
   _id: string;
@@ -156,14 +158,19 @@ export async function getWorkspaceCredentials(workspaceId: string) {
 }
 
 /** HTTP callers must pass workspace identity from a verified admin session. */
+function checkedHtml(html: string): string {
+  if (Buffer.byteLength(html, "utf8") > 200 * 1024 ||
+      !/<!doctype\s+html\s*>/i.test(html) || !/<html[\s>]/i.test(html) ||
+      !/<body[\s>]/i.test(html) || !/<\/html\s*>/i.test(html)) {
+    throw new DatabaseError("INVALID_INPUT", "A complete HTML document of at most 200 KiB is required.");
+  }
+  return html;
+}
+
 export async function createWidget(workspaceId: string, input: GeneratedWidget): Promise<Widget> {
   checkWorkspaceId(workspaceId);
   const title = checkedTitle(input.title);
-  if (Buffer.byteLength(input.html, "utf8") > 200 * 1024 ||
-      !/<!doctype\s+html\s*>/i.test(input.html) || !/<html[\s>]/i.test(input.html) ||
-      !/<body[\s>]/i.test(input.html) || !/<\/html\s*>/i.test(input.html)) {
-    throw new DatabaseError("INVALID_INPUT", "A complete HTML document of at most 200 KiB is required.");
-  }
+  checkedHtml(input.html);
   if (!(await getWorkspace(workspaceId))) throw new DatabaseError("NOT_FOUND", "Workspace not found.");
   const db = await getDatabase();
   const record: WidgetRecord = { _id: randomUUID(), workspaceId, title, html: input.html, createdAt: new Date() };
@@ -174,8 +181,42 @@ export async function createWidget(workspaceId: string, input: GeneratedWidget):
 export async function listWidgets(workspaceId: string): Promise<Widget[]> {
   checkWorkspaceId(workspaceId);
   const db = await getDatabase();
-  const records = await db.collection<WidgetRecord>("widgets").find({ workspaceId }).sort({ createdAt: 1, _id: 1 }).toArray();
-  return records.map(publicWidget);
+  const [records, workspace] = await Promise.all([
+    db.collection<WidgetRecord>("widgets").find({ workspaceId }).sort({ createdAt: 1, _id: 1 }).toArray(),
+    db.collection<WorkspaceRecord>("workspaces").findOne({ _id: workspaceId }, { projection: { widgetOrder: 1 } }),
+  ]);
+  const rank = new Map((workspace?.widgetOrder ?? []).map((id, index) => [id, index]));
+  const last = Number.MAX_SAFE_INTEGER;
+  return records
+    .slice()
+    .sort((a, b) => (rank.get(a._id) ?? last) - (rank.get(b._id) ?? last))
+    .map(publicWidget);
+}
+
+/** Replaces a widget's title and HTML; the id, creation time, and shared data are kept. */
+export async function updateWidget(workspaceId: string, widgetId: string, input: GeneratedWidget): Promise<Widget | null> {
+  checkWorkspaceId(workspaceId);
+  const title = checkedTitle(input.title);
+  const html = checkedHtml(input.html);
+  const db = await getDatabase();
+  const result = await db.collection<WidgetRecord>("widgets").findOneAndUpdate(
+    { _id: widgetId, workspaceId },
+    { $set: { title, html } },
+    { returnDocument: "after" },
+  );
+  return result ? publicWidget(result) : null;
+}
+
+/** Stores the admin's tab order. Every id must belong to the workspace. */
+export async function setWidgetOrder(workspaceId: string, ids: string[]): Promise<boolean> {
+  checkWorkspaceId(workspaceId);
+  const db = await getDatabase();
+  const owned = await db.collection<WidgetRecord>("widgets").find({ workspaceId }, { projection: { _id: 1 } }).toArray();
+  const ownedIds = new Set(owned.map((record) => record._id));
+  const unique = Array.from(new Set(ids));
+  if (unique.length !== ids.length || !unique.every((id) => ownedIds.has(id))) return false;
+  await db.collection<WorkspaceRecord>("workspaces").updateOne({ _id: workspaceId }, { $set: { widgetOrder: unique } });
+  return true;
 }
 
 export async function getWidget(workspaceId: string, widgetId: string): Promise<Widget | null> {

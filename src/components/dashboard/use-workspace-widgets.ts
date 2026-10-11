@@ -24,18 +24,12 @@ async function request<T>(url: string, signal: AbortSignal): Promise<T> {
   return result.data;
 }
 
-// Tab order is kept per browser until the backend stores an order field.
-function orderKey(workspaceId: string) { return `workspacezero.widget-order:${workspaceId}`; }
-function readOrder(workspaceId: string): string[] {
-  try { const raw = localStorage.getItem(orderKey(workspaceId)); const parsed: unknown = raw ? JSON.parse(raw) : []; return Array.isArray(parsed) ? parsed.filter((id): id is string => typeof id === "string") : []; }
-  catch { return []; }
-}
-function writeOrder(workspaceId: string, ids: string[]) {
-  try { localStorage.setItem(orderKey(workspaceId), JSON.stringify(ids)); } catch { /* optional */ }
-}
-function applyOrder(widgets: Widget[], order: string[]): Widget[] {
-  const rank = new Map(order.map((id, index) => [id, index]));
-  return widgets.slice().sort((a, b) => (rank.get(a.id) ?? Number.MAX_SAFE_INTEGER) - (rank.get(b.id) ?? Number.MAX_SAFE_INTEGER));
+function moveId(ids: string[], draggedId: string, targetId: string): string[] | null {
+  const next = ids.slice();
+  const from = next.indexOf(draggedId), to = next.indexOf(targetId);
+  if (from < 0 || to < 0) return null;
+  next.splice(to, 0, next.splice(from, 1)[0]);
+  return next;
 }
 
 // Both the dashboard and dedicated page load the same saved Widget records.
@@ -43,7 +37,6 @@ export function useWorkspaceWidgets(preview = false) {
   const previewWidgets = usePreviewWidgets();
   const [state, setState] = useState<WorkspaceState>({ status: "loading" });
   const [revision, setRevision] = useState(0);
-  const [orderVersion, setOrderVersion] = useState(0);
   useEffect(() => {
     if (preview) {
       return;
@@ -54,7 +47,7 @@ export function useWorkspaceWidgets(preview = false) {
       request<ApiData["widgets"]>("/api/widgets", controller.signal),
     ]).then(([workspaceData, widgetData]) => {
       if (!workspaceData.workspace?.id || !Array.isArray(widgetData.widgets)) throw new Error("The workspace response isn't ready. Please try again.");
-      if (!controller.signal.aborted) setState({ status: "ready", workspace: workspaceData.workspace, widgets: applyOrder(widgetData.widgets, readOrder(workspaceData.workspace.id)) });
+      if (!controller.signal.aborted) setState({ status: "ready", workspace: workspaceData.workspace, widgets: widgetData.widgets });
     }).catch((error: unknown) => {
       if (!controller.signal.aborted) {
         if (error instanceof RequestError && error.status === 401) setState({ status: "signed_out" });
@@ -64,16 +57,26 @@ export function useWorkspaceWidgets(preview = false) {
     return () => controller.abort();
   }, [revision, preview]);
   function retry() { setState({ status: "loading" }); setRevision((value) => value + 1); }
-  /** Drops `draggedId` into `targetId`'s slot; everything else keeps its relative order. */
-  function reorderWidget(draggedId: string, targetId: string) {
-    if (state.status !== "ready" || draggedId === targetId) return;
-    const ids = state.widgets.map((widget) => widget.id);
-    const from = ids.indexOf(draggedId), to = ids.indexOf(targetId);
-    if (from < 0 || to < 0) return;
-    ids.splice(to, 0, ids.splice(from, 1)[0]);
-    writeOrder(state.workspace.id, ids);
-    setState({ ...state, widgets: applyOrder(state.widgets, ids) });
-    setOrderVersion((value) => value + 1);
+  /** Drops `draggedId` into `targetId`'s slot and saves the order for the whole team. */
+  async function reorderWidget(draggedId: string, targetId: string): Promise<string | null> {
+    if (state.status !== "ready" || draggedId === targetId) return null;
+    const ids = moveId(state.widgets.map((widget) => widget.id), draggedId, targetId);
+    if (!ids) return null;
+    const previous = state;
+    const byId = new Map(state.widgets.map((widget) => [widget.id, widget]));
+    setState({ ...state, widgets: ids.map((id) => byId.get(id)!) });
+    const response = await fetch("/api/widgets/order", {
+      method: "PATCH", headers: { "Content-Type": "application/json" }, credentials: "same-origin", body: JSON.stringify({ ids }),
+    });
+    if (response.ok) return null;
+    setState(previous);
+    const result = (await response.json().catch(() => null)) as ApiResponse<unknown> | null;
+    return result?.error?.message ?? "The new order could not be saved.";
+  }
+  /** Replaces a widget in local state after an edit is saved. */
+  function updateWidget(updated: Widget) {
+    if (state.status !== "ready") return;
+    setState({ ...state, widgets: state.widgets.map((widget) => (widget.id === updated.id ? updated : widget)) });
   }
   /** Deletes a widget and its shared data (admin only; the server enforces this). */
   async function removeWidget(id: string): Promise<string | null> {
@@ -87,8 +90,7 @@ export function useWorkspaceWidgets(preview = false) {
     return null;
   }
   const resolvedState: WorkspaceState = preview ? { status: "ready", workspace: mockWorkspace, widgets: previewWidgets } : state;
-  void orderVersion;
-  return { state: resolvedState, retry, reorderWidget, removeWidget };
+  return { state: resolvedState, retry, reorderWidget, removeWidget, updateWidget };
 }
 
 function previewSnapshot(): string | null {

@@ -1,6 +1,7 @@
 import "server-only";
 import type { GeneratedWidget } from "@/types/contracts";
 import { buildGenerationMessages, parseModelOutput } from "@/lib/widget-protocol/generation-contract";
+import type { WidgetReference } from "@/lib/widget-protocol/generation-contract";
 
 export type GenerationErrorCode =
   | "INVALID_INPUT"
@@ -48,7 +49,7 @@ function providerConfig() {
 }
 
 /** Server-only generation. A future admin-authenticated route will call this. */
-export async function generateWidget(prompt: string, baseHtml?: string): Promise<GeneratedWidget> {
+export async function generateWidget(prompt: string, baseHtml?: string, references: WidgetReference[] = []): Promise<GeneratedWidget> {
   if (typeof prompt !== "string" || !prompt.trim() || prompt.trim().length > MAX_PROMPT_CHARACTERS) {
     throw new GenerationError("INVALID_INPUT", "Prompt must contain 1 to 4,000 characters.");
   }
@@ -56,7 +57,7 @@ export async function generateWidget(prompt: string, baseHtml?: string): Promise
     throw new GenerationError("INVALID_INPUT", "Base HTML must be a non-empty document of at most 200 KiB.");
   }
   const { apiKey, model, endpoint } = providerConfig();
-  const messages = buildGenerationMessages({ prompt, baseHtml });
+  const messages = buildGenerationMessages({ prompt, baseHtml, references });
   let response: Response | undefined;
   for (const maxTokens of [8_000, 5_000]) {
     try {
