@@ -8,11 +8,13 @@ import type { GeneratedWidget, Theme } from "@/types/contracts";
 
 const examples = ["Build a shared team poll", "Create a launch countdown", "Make a meeting cost calculator", "Create a personal scratchpad"];
 
-export function AIBuilderPanel({ onGenerate, onSave, onDiscard, isAdmin, workspaceId, theme, preview }: {
+export function AIBuilderPanel({ onGenerate, onSave, onDiscard, onToggle, isAdmin, expanded, workspaceId, theme, preview }: {
   onGenerate: (prompt: string) => Promise<void>;
   onSave: () => Promise<void>;
   onDiscard: () => void;
+  onToggle: () => void;
   isAdmin: boolean;
+  expanded: boolean;
   workspaceId: string;
   theme: Theme;
   preview: GeneratedWidget | null;
@@ -36,8 +38,9 @@ export function AIBuilderPanel({ onGenerate, onSave, onDiscard, isAdmin, workspa
     } finally { setBusy(false); }
   }
 
-  return <aside className="builder" aria-labelledby="builder-heading">
-    <h2 id="builder-heading">Create a tool</h2><p className="builder-description">Describe the tool your team needs, what it should do, and how you&apos;ll use it.</p>
+  return <aside id="tool-builder" className={`builder ${expanded ? "builder-expanded" : "builder-collapsed"}`} aria-labelledby="builder-heading">
+    <button type="button" className="builder-toggle" aria-expanded={expanded} onClick={onToggle}><h2 id="builder-heading">Create a tool</h2></button>
+    {expanded && <><p className="builder-description">Describe the tool your team needs, what it should do, and how you&apos;ll use it.</p>
     {isAdmin ? <><form onSubmit={submit}><label htmlFor="tool-prompt" className="input-label">What would you like to create?</label>
       <textarea ref={inputRef} id="tool-prompt" placeholder="A poll to help our team decide what to work on next…" value={prompt} onChange={(event) => { setPrompt(event.target.value); setError(""); setMessage(""); }} maxLength={4000} required disabled={busy} rows={5} aria-describedby="builder-mode" />
       <div className="prompt-meta"><span>Make it as specific as you like</span><span>{prompt.length}/4000</span></div>
@@ -50,5 +53,6 @@ export function AIBuilderPanel({ onGenerate, onSave, onDiscard, isAdmin, workspa
       <div className="preview-actions"><button type="button" onClick={onDiscard}>Discard</button><button type="button" className="generate-button" disabled={busy} onClick={async () => { setBusy(true); setError(""); try { await onSave(); } catch (cause) { setError(cause instanceof Error ? cause.message : "Save failed."); } finally { setBusy(false); } }}>Save for team</button></div>
     </section>}
     <div className="builder-note" id="builder-mode"><span className="note-dot" /><p><strong>AI builder</strong>Generated tools stay private until you approve and save them.</p></div>
+    </>}
   </aside>;
 }
