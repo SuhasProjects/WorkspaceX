@@ -71,6 +71,8 @@ export function prepareWorkspaceRevealSound(): WorkspaceRevealSound {
           breath.stop(now + 1.3);
 
           [
+            { start: 0, from: 220, to: 246.94, level: 0.024, detune: -2 },
+            { start: 0.025, from: 220, to: 246.94, level: 0.024, detune: 2 },
             { start: 0, from: 369.99, to: 415.3, level: 0.065, detune: -4 },
             { start: 0.025, from: 369.99, to: 415.3, level: 0.065, detune: 4 },
             { start: 0.04, from: 440, to: 493.88, level: 0.048, detune: -3 },
@@ -98,23 +100,29 @@ export function prepareWorkspaceRevealSound(): WorkspaceRevealSound {
           });
 
           [
-            { start: 0.12, frequency: 880, level: 0.027 },
-            { start: 0.2, frequency: 1174.66, level: 0.021 },
-            { start: 0.29, frequency: 1760, level: 0.014 },
+            { start: 0.12, frequency: 830.61, level: 0.022 },
+            { start: 0.52, frequency: 987.77, level: 0.019 },
+            { start: 0.92, frequency: 1244.51, level: 0.015 },
+            { start: 1.24, frequency: 1661.22, level: 0.01 },
           ].forEach(({ start, frequency, level }) => {
-            const oscillator = context.createOscillator();
-            const envelope = context.createGain();
             const beginning = now + start;
-            oscillator.type = "sine";
-            oscillator.frequency.setValueAtTime(frequency, beginning);
-            oscillator.frequency.exponentialRampToValueAtTime(frequency * 0.997, beginning + 0.9);
-            envelope.gain.setValueAtTime(0.0001, beginning);
-            envelope.gain.exponentialRampToValueAtTime(level, beginning + 0.035);
-            envelope.gain.exponentialRampToValueAtTime(0.0001, beginning + 1.05);
-            oscillator.connect(envelope);
-            envelope.connect(warmth);
-            oscillator.start(beginning);
-            oscillator.stop(beginning + 1.1);
+            [
+              { ratio: 1, level: 1 },
+              { ratio: 2.76, level: 0.14 },
+            ].forEach((partial) => {
+              const oscillator = context.createOscillator();
+              const envelope = context.createGain();
+              oscillator.type = "sine";
+              oscillator.frequency.setValueAtTime(frequency * partial.ratio, beginning);
+              oscillator.frequency.exponentialRampToValueAtTime(frequency * partial.ratio * 0.997, beginning + 0.9);
+              envelope.gain.setValueAtTime(0.0001, beginning);
+              envelope.gain.exponentialRampToValueAtTime(level * partial.level, beginning + 0.035);
+              envelope.gain.exponentialRampToValueAtTime(0.0001, beginning + 1.05);
+              oscillator.connect(envelope);
+              envelope.connect(warmth);
+              oscillator.start(beginning);
+              oscillator.stop(beginning + 1.1);
+            });
           });
 
           window.setTimeout(cancel, 2300);
