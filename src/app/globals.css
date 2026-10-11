@@ -118,7 +118,7 @@ svg { flex-shrink: 0; }
 .workspace-content { width: 100%; min-width: 0; }
 .builder { order: -1; display: grid; grid-template-columns: .8fr 1.2fr; gap: 0 46px; width: 100%; padding: 30px 34px 22px; position: relative; border: 1px solid var(--wz-border); border-radius: 3px; background: linear-gradient(115deg, var(--glass), var(--glass-soft)); backdrop-filter: blur(28px); -webkit-backdrop-filter: blur(28px); box-shadow: var(--glass-shadow); }
 .builder-collapsed { display: block; padding: 0; }
-.builder-toggle { display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 0; border: 0; background: transparent; color: var(--wz-text); text-align: left; }
+.builder-toggle { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; width: 100%; padding: 0; border: 0; background: transparent; color: var(--wz-text); text-align: left; }
 .builder-collapsed .builder-toggle { min-height: 68px; padding: 0 24px; }
 .builder-toggle::after { content: "+"; color: var(--wz-muted); font-size: 22px; font-weight: 300; line-height: 1; }
 .builder-toggle[aria-expanded="true"]::after { content: "−"; }
@@ -126,7 +126,7 @@ svg { flex-shrink: 0; }
 .builder-collapsed .builder-toggle h2 { font-size: 20px; letter-spacing: .015em; }
 .builder h2 { grid-column: 1; font-size: clamp(29px, 3.2vw, 42px); line-height: 1.14; font-weight: 350; letter-spacing: -1.5px; margin-bottom: 15px; }
 .builder-description { grid-column: 1; color: var(--wz-muted); font-size: 12px; line-height: 1.8; margin-bottom: 12px; }
-.builder form { grid-column: 2; grid-row: 1 / 4; align-self: center; }
+.builder form { grid-column: 2; grid-row: 2 / 4; align-self: center; }
 .input-label { display: block; font-size: 11px; color: var(--wz-muted); margin-bottom: 11px; }
 .builder textarea { display: block; width: 100%; resize: vertical; min-height: 115px; max-height: 360px; padding: 17px 18px; background: var(--inset); border: 1px solid var(--wz-border); border-radius: 3px; color: var(--wz-text); font-size: 14px; line-height: 1.8; transition: border-color 180ms ease; }
 .builder textarea::placeholder { color: var(--wz-muted); opacity: .85; }
@@ -207,6 +207,17 @@ svg { flex-shrink: 0; }
 .task-actions { display: flex; align-items: center; gap: 5px; }
 .task-actions select { padding: 4px; font-size: 9px; }
 .task-actions button { border: 0; background: transparent; color: var(--wz-danger); font-size: 9px; padding: 4px; }
+.task-actions button[aria-label^="Edit"] { color: var(--wz-accent); }
+.task-edit { display: grid; gap: 10px; }
+.task-edit label { display: grid; gap: 4px; color: var(--wz-muted); font-size: 9px; letter-spacing: .04em; text-transform: uppercase; }
+.task-edit input, .task-edit textarea { width: 100%; min-width: 0; border: 1px solid var(--wz-border); border-radius: 3px; background: var(--wz-elevated); color: var(--wz-text); padding: 7px 8px; font: inherit; font-size: 11px; line-height: 1.45; resize: vertical; }
+.task-edit input[type="date"], .task-edit input[type="time"] { color-scheme: dark; }
+[data-theme="light"] .task-edit input[type="date"], [data-theme="light"] .task-edit input[type="time"] { color-scheme: light; }
+.task-edit input:disabled { cursor: not-allowed; opacity: .55; }
+.task-edit-schedule { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 7px; }
+.task-edit-actions { display: flex; gap: 7px; }
+.task-edit-actions button { border: 1px solid var(--wz-border); border-radius: 3px; padding: 6px 9px; background: transparent; color: var(--wz-muted); font-size: 10px; }
+.task-edit-actions button[type="submit"] { background: var(--wz-accent); color: var(--wz-accent-text); font-weight: 600; }
 .task-avatar { width: 22px; height: 22px; font-size: 8px; }
 .empty-column { font-size: 12px; color: var(--wz-muted); padding: 15px 5px; }
 .tools-section { margin-top: 32px; }
