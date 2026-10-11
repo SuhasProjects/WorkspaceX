@@ -8,8 +8,10 @@ import type { GeneratedWidget, Theme } from "@/types/contracts";
 
 const examples = ["Build a shared team poll", "Create a launch countdown", "Make a meeting cost calculator", "Create a personal scratchpad"];
 
-export function AIBuilderPanel({ onGenerate, onSave, onDiscard, onToggle, isAdmin, expanded, workspaceId, theme, preview }: {
-  onGenerate: (prompt: string) => Promise<void>;
+export function AIBuilderPanel({ onGenerate, onSave, onDiscard, onToggle, isAdmin, expanded, workspaceId, theme, preview, referenceOptions = [] }: {
+  onGenerate: (prompt: string, referenceId?: string) => Promise<void>;
+  /** Saved tools the admin can pick as the style reference. */
+  referenceOptions?: { id: string; title: string }[];
   onSave: () => Promise<void>;
   onDiscard: () => void;
   onToggle: () => void;
@@ -20,6 +22,7 @@ export function AIBuilderPanel({ onGenerate, onSave, onDiscard, onToggle, isAdmi
   preview: GeneratedWidget | null;
 }) {
   const [prompt, setPrompt] = useState("");
+  const [referenceId, setReferenceId] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
@@ -30,7 +33,7 @@ export function AIBuilderPanel({ onGenerate, onSave, onDiscard, onToggle, isAdmi
     if (busy || !isAdmin || !prompt.trim()) return;
     setBusy(true); setError(""); setMessage("");
     try {
-      await onGenerate(prompt.trim());
+      await onGenerate(prompt.trim(), referenceId || undefined);
       setMessage("Preview ready. Test it, then save it for your team.");
       setPrompt("");
     } catch (cause) {
@@ -44,6 +47,11 @@ export function AIBuilderPanel({ onGenerate, onSave, onDiscard, onToggle, isAdmi
     {isAdmin ? <><form onSubmit={submit}><label htmlFor="tool-prompt" className="input-label">What would you like to create?</label>
       <textarea ref={inputRef} id="tool-prompt" placeholder="A poll to help our team decide what to work on next…" value={prompt} onChange={(event) => { setPrompt(event.target.value); setError(""); setMessage(""); }} maxLength={4000} required disabled={busy} rows={5} aria-describedby="builder-mode" />
       <div className="prompt-meta"><span>Make it as specific as you like</span><span>{prompt.length}/4000</span></div>
+      {referenceOptions.length > 0 && <label className="reference-pick"><span>Match the style of</span>
+        <select value={referenceId} onChange={(event) => setReferenceId(event.target.value)} disabled={busy} aria-label="Tool to use as a style reference">
+          <option value="">Recent tools (automatic)</option>
+          {referenceOptions.map((option) => <option key={option.id} value={option.id}>{option.title}</option>)}
+        </select></label>}
       <button type="submit" className="generate-button" disabled={busy || !prompt.trim()}>{busy ? <><span className="spinner" />Creating preview…</> : <><Icon name="sparkle" />Create preview<Icon name="arrow" size={17} /></>}</button>
       <div aria-live="polite" aria-atomic="true">{error && <p className="feedback error" role="alert">{error}</p>}{message && <p className="feedback success">{message}</p>}</div>
     </form><div className="examples"><h3>Need a starting point?</h3>{examples.map((example) => <button key={example} type="button" disabled={busy} onClick={() => { setPrompt(example); setMessage(""); inputRef.current?.focus(); }}><Icon name="plus" size={14} />{example}<Icon name="arrow" size={14} /></button>)}</div></> : <p className="feedback">Your workspace admin can create new team tools.</p>}

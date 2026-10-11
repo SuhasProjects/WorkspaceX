@@ -70,8 +70,8 @@ export function Dashboard() {
   const { workspace, widgets } = state;
   const activeWidget = activeTool ? widgets.find((widget) => widget.id === activeTool) ?? null : null;
 
-  async function generate(prompt: string) {
-    setPreview(await post<GeneratedWidget>("/api/generate", { prompt }));
+  async function generate(prompt: string, referenceId?: string) {
+    setPreview(await post<GeneratedWidget>("/api/generate", referenceId ? { prompt, referenceId } : { prompt }));
   }
   async function save() {
     if (!preview) return;
@@ -160,7 +160,7 @@ export function Dashboard() {
           ? <ToolEditor key={activeWidget.id} widget={activeWidget} workspaceId={workspace.id} theme={theme} onClose={() => setEditingTool(null)} onSaved={(saved) => { updateWidget(saved); setEditingTool(null); }} />
           : <WidgetRenderer key={`${workspace.id}:${activeWidget.id}:${activeWidget.html.length}`} widgetId={activeWidget.id} workspaceId={workspace.id} html={activeWidget.html} theme={theme} title={activeWidget.title} className="tool-pane-frame" />}
       </section> : <div className="dashboard-grid"><div className="workspace-content"><div className="overview-grid"><Calendar tasks={tasks} selectedDueDate={selectedDueDate} onSelectDueDate={setSelectedDueDate} /><TodoList tasks={tasks} canEdit={workspace.role === "admin" && !taskBusy} selectedDueDate={selectedDueDate} onClearDate={() => setSelectedDueDate(null)} onToggle={toggleTask} /></div><TaskBoard tasks={tasks} canEdit={workspace.role === "admin"} busy={taskBusy} message={taskMessage} onCreate={createTask} onUpdate={updateTask} onStatus={(id, status) => void updateTaskStatus(id, status)} onDelete={(id) => void deleteTask(id)} />
-      </div>{workspace.role === "admin" && <AIBuilderPanel isAdmin expanded={builderOpen} onToggle={() => setBuilderOpen((current) => !current)} workspaceId={workspace.id} theme={theme} preview={preview} onGenerate={generate} onSave={save} onDiscard={() => setPreview(null)} />}</div>}
+      </div>{workspace.role === "admin" && <AIBuilderPanel isAdmin referenceOptions={widgets.map(({ id, title }) => ({ id, title }))} expanded={builderOpen} onToggle={() => setBuilderOpen((current) => !current)} workspaceId={workspace.id} theme={theme} preview={preview} onGenerate={generate} onSave={save} onDiscard={() => setPreview(null)} />}</div>}
       <footer className="dashboard-footer"><span>WorkspaceZero · Small software. Shared workspace.</span><span>AI tools, shared with your team</span></footer>
     </main>
   </div>;

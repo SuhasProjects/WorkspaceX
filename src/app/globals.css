@@ -328,3 +328,7 @@ body { font-family: var(--wz-font-body); }
 .tool-editor-note { padding: 8px 24px; font-size: 12px; color: var(--wz-muted); border-bottom: 1px solid var(--wz-border); }
 .wz-tool-btn.primary { background: var(--wz-accent); color: var(--wz-accent-text); border-color: var(--wz-accent); }
 .wz-tool-btn.active { background: var(--inset); }
+
+/* ---- Builder: style reference picker ---- */
+.reference-pick { display: flex; align-items: center; gap: 10px; margin: 0 1px 14px; font-size: 11px; color: var(--wz-muted); }
+.reference-pick select { flex: 1; min-width: 0; padding: 7px 10px; background: var(--inset); border: 1px solid var(--wz-border); border-radius: 3px; color: var(--wz-text); font: inherit; font-size: 12px; }
