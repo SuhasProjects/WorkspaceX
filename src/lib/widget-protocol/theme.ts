@@ -28,7 +28,7 @@ const SHARED_DEFAULTS: ThemeTokens = {
   "--wz-font-display": "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif",
   "--wz-heading-weight": "400",
   "--wz-heading-spacing": "0",
-  "--wz-radius": "3px",
+  "--wz-radius": "0px",
 };
 
 /** Fallback palette, mirroring src/app/globals.css at the time of writing. */
