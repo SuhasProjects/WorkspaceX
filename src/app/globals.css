@@ -83,41 +83,41 @@
 body { margin: 0; background: var(--background); color: var(--foreground); font-family: var(--wz-font-body); font-weight: 300; font-size: 14px; line-height: 1.6; }
 h1, h2, h3, h4, p { margin: 0; }
 button, input, select, textarea { font: inherit; }
-/* Keep dropdown controls and their menus consistent with the dark UI. */
+/* Dropdown controls and menus follow the active theme. */
 :root :is(.task-actions, .widget-size-control, .reference-pick) select {
-  color-scheme: dark;
+  color-scheme: inherit;
   font-family: var(--wz-font-body);
   font-weight: 300;
-  color: #edf0f5;
-  background: #20242c;
-  border: 1px solid rgba(224, 232, 255, .18);
+  color: var(--wz-text);
+  background: var(--wz-surface);
+  border: 1px solid var(--wz-border);
   border-radius: 8px;
   padding: 7px 10px;
   cursor: pointer;
   transition: border-color 180ms ease, background 180ms ease;
 }
-:is(.task-actions, .widget-size-control, .reference-pick) select:hover { border-color: #adb4c2; }
-:is(.task-actions, .widget-size-control, .reference-pick) select:focus-visible { outline: 2px solid #b6c8f0; outline-offset: 3px; }
+:root :is(.task-actions, .widget-size-control, .reference-pick) select:hover { border-color: var(--wz-muted); }
+:is(.task-actions, .widget-size-control, .reference-pick) select:focus-visible { outline: 2px solid var(--wz-accent); outline-offset: 3px; }
 :is(.task-actions, .widget-size-control, .reference-pick) select:disabled { opacity: .5; cursor: not-allowed; }
-select option { font-family: var(--wz-font-body); font-weight: 300; background: #20242c; color: #edf0f5; }
+select option { font-family: var(--wz-font-body); font-weight: 300; background: var(--wz-surface); color: var(--wz-text); }
 @supports (appearance: base-select) {
   :is(.task-actions, .widget-size-control, .reference-pick) select,
   :is(.task-actions, .widget-size-control, .reference-pick) select::picker(select) { appearance: base-select; }
   :is(.task-actions, .widget-size-control, .reference-pick) select::picker(select) {
     margin-top: 6px;
     padding: 6px;
-    background: #20242c;
-    color: #edf0f5;
-    border: 1px solid rgba(224, 232, 255, .18);
+    background: var(--wz-surface);
+    color: var(--wz-text);
+    border: 1px solid var(--wz-border);
     border-radius: 10px;
-    box-shadow: 0 12px 32px rgba(0, 0, 0, .35);
+    box-shadow: var(--glass-shadow);
     font: 300 13px/1.5 var(--wz-font-body);
   }
   :is(.task-actions, .widget-size-control, .reference-pick) select option { padding: 8px 12px; border-radius: 6px; }
   :is(.task-actions, .widget-size-control, .reference-pick) select option:hover,
-  :is(.task-actions, .widget-size-control, .reference-pick) select option:focus { background: #303743; }
-  :is(.task-actions, .widget-size-control, .reference-pick) select option:checked { background: #354155; color: #dce5f5; }
-  :is(.task-actions, .widget-size-control, .reference-pick) select::picker-icon { color: #adb4c2; }
+  :is(.task-actions, .widget-size-control, .reference-pick) select option:focus { background: var(--hover); }
+  :is(.task-actions, .widget-size-control, .reference-pick) select option:checked { background: var(--hover); color: var(--wz-accent); }
+  :is(.task-actions, .widget-size-control, .reference-pick) select::picker-icon { color: var(--wz-muted); }
 }
 button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
 button:not(:disabled), a { cursor: pointer; }
