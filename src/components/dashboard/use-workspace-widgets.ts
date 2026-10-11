@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
-import type { ApiData, ApiResponse, Theme, Widget, WidgetSize, Workspace } from "@/types/contracts";
+import type { ApiData, ApiResponse, Theme, Widget, WidgetSize, WidgetSpan, Workspace } from "@/types/contracts";
 import { mockWorkspace, readPreviewWidgets } from "./mock-data";
 
 type WorkspaceState =
@@ -90,21 +90,21 @@ export function useWorkspaceWidgets(preview = false) {
     return null;
   }
   /** Updates the persisted display size and immediately moves the widget between views. */
-  async function updateWidgetSize(id: string, size: WidgetSize): Promise<string | null> {
+  async function patchWidget(id: string, body: { size?: WidgetSize; span?: WidgetSpan }): Promise<string | null> {
     if (state.status !== "ready") return "Not ready.";
     const response = await fetch(`/api/widgets/${encodeURIComponent(id)}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      credentials: "same-origin",
-      body: JSON.stringify({ size }),
+      method: "PATCH", headers: { "Content-Type": "application/json" }, credentials: "same-origin", body: JSON.stringify(body),
     });
     const result = (await response.json().catch(() => null)) as ApiResponse<{ widget: Widget }> | null;
-    if (!response.ok || !result?.data) return result?.error?.message ?? "The tool size could not be updated.";
+    if (!response.ok || !result?.data) return result?.error?.message ?? "The tool layout could not be updated.";
     setState({ ...state, widgets: state.widgets.map((widget) => widget.id === id ? result.data!.widget : widget) });
     return null;
   }
+  function updateWidgetSize(id: string, size: WidgetSize) { return patchWidget(id, { size }); }
+  /** Saves a drag-resized footprint for everyone in the workspace. */
+  function updateWidgetSpan(id: string, span: WidgetSpan) { return patchWidget(id, { span }); }
   const resolvedState: WorkspaceState = preview ? { status: "ready", workspace: mockWorkspace, widgets: previewWidgets } : state;
-  return { state: resolvedState, retry, reorderWidget, removeWidget, updateWidget, updateWidgetSize };
+  return { state: resolvedState, retry, reorderWidget, removeWidget, updateWidget, updateWidgetSize, updateWidgetSpan };
 }
 
 function previewSnapshot(): string | null {

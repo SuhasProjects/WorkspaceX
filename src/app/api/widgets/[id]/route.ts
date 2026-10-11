@@ -1,8 +1,8 @@
-import { deleteWidget, updateWidget, updateWidgetSize } from "@/lib/db/repository";
+import { deleteWidget, updateWidget, updateWidgetLayout } from "@/lib/db/repository";
 import { checkOrigin, failure, HttpError, onlyFields, readJsonObject, success } from "@/lib/auth/http";
 import { requireSession } from "@/lib/auth/session";
 import { DatabaseError } from "@/lib/db/client";
-import type { WidgetSize } from "@/types/contracts";
+import type { WidgetSize, WidgetSpan } from "@/types/contracts";
 
 export const runtime = "nodejs";
 
@@ -11,12 +11,18 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     checkOrigin(request);
     const session = await requireSession("admin");
     const body = await readJsonObject(request);
-    onlyFields(body, ["size"]);
-    if (body.size !== "small" && body.size !== "medium" && body.size !== "large") {
+    onlyFields(body, ["size", "span"]);
+    if (body.size !== undefined && body.size !== "small" && body.size !== "medium" && body.size !== "large") {
       throw new HttpError(400, "INVALID_INPUT", "Widget size must be small, medium, or large.");
     }
+    if (body.span !== undefined && (typeof body.span !== "object" || body.span === null)) {
+      throw new HttpError(400, "INVALID_INPUT", "Widget span must be an object with cols and rows.");
+    }
     const { id } = await params;
-    const widget = await updateWidgetSize(session.workspaceId, id, body.size as WidgetSize);
+    const widget = await updateWidgetLayout(session.workspaceId, id, {
+      ...(body.size !== undefined ? { size: body.size as WidgetSize } : {}),
+      ...(body.span !== undefined ? { span: body.span as WidgetSpan } : {}),
+    });
     if (!widget) throw new HttpError(404, "NOT_FOUND", "Widget not found.");
     return success({ widget });
   } catch (error) {

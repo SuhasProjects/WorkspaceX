@@ -1,7 +1,7 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
 import { MongoServerError } from "mongodb";
-import type { GeneratedWidget, JsonValue, Task, TaskStatus, UpdateTaskRequest, Widget, WidgetSize } from "@/types/contracts";
+import type { GeneratedWidget, JsonValue, Task, TaskStatus, UpdateTaskRequest, Widget, WidgetSize, WidgetSpan } from "@/types/contracts";
 import { DatabaseError, getDatabase } from "./client";
 
 interface WorkspaceRecord {
@@ -19,6 +19,7 @@ interface WidgetRecord {
   title: string;
   html: string;
   size?: WidgetSize;
+  span?: WidgetSpan;
   createdAt: Date;
 }
 interface WidgetDataRecord {
@@ -58,7 +59,7 @@ function checkedTitle(title: string): string {
   return result;
 }
 function publicWidget(record: WidgetRecord): Widget {
-  return { id: record._id, title: record.title, html: record.html, size: record.size ?? "large", createdAt: record.createdAt.toISOString() };
+  return { id: record._id, title: record.title, html: record.html, size: record.size ?? "large", ...(record.span ? { span: record.span } : {}), createdAt: record.createdAt.toISOString() };
 }
 function checkedWidgetSize(size: unknown, fallback: WidgetSize): WidgetSize {
   if (size === undefined) return fallback;
@@ -234,15 +235,36 @@ export async function getWidget(workspaceId: string, widgetId: string): Promise<
   return record ? publicWidget(record) : null;
 }
 
-export async function updateWidgetSize(workspaceId: string, widgetId: string, size: WidgetSize): Promise<Widget | null> {
+export const SPAN_LIMITS = { minCols: 3, maxCols: 12, minRows: 4, maxRows: 40 } as const;
+
+function checkedSpan(span: unknown): WidgetSpan {
+  const { cols, rows } = (span ?? {}) as Partial<WidgetSpan>;
+  if (!Number.isInteger(cols) || !Number.isInteger(rows) ||
+      (cols as number) < SPAN_LIMITS.minCols || (cols as number) > SPAN_LIMITS.maxCols ||
+      (rows as number) < SPAN_LIMITS.minRows || (rows as number) > SPAN_LIMITS.maxRows) {
+    throw new DatabaseError("INVALID_INPUT", `Widget span must be ${SPAN_LIMITS.minCols}-${SPAN_LIMITS.maxCols} columns and ${SPAN_LIMITS.minRows}-${SPAN_LIMITS.maxRows} rows.`);
+  }
+  return { cols: cols as number, rows: rows as number };
+}
+
+/** Updates the gallery preset size and/or the exact drag-resized span. */
+export async function updateWidgetLayout(
+  workspaceId: string, widgetId: string, input: { size?: WidgetSize; span?: WidgetSpan },
+): Promise<Widget | null> {
   checkWorkspaceId(workspaceId);
+  const changes: Partial<WidgetRecord> = {};
+  if (input.size !== undefined) changes.size = checkedWidgetSize(input.size, "medium");
+  if (input.span !== undefined) changes.span = checkedSpan(input.span);
+  if (Object.keys(changes).length === 0) throw new DatabaseError("INVALID_INPUT", "Provide a size or span.");
   const db = await getDatabase();
   const record = await db.collection<WidgetRecord>("widgets").findOneAndUpdate(
-    { _id: widgetId, workspaceId },
-    { $set: { size: checkedWidgetSize(size, "medium") } },
-    { returnDocument: "after" },
+    { _id: widgetId, workspaceId }, { $set: changes }, { returnDocument: "after" },
   );
   return record ? publicWidget(record) : null;
+}
+
+export async function updateWidgetSize(workspaceId: string, widgetId: string, size: WidgetSize): Promise<Widget | null> {
+  return updateWidgetLayout(workspaceId, widgetId, { size });
 }
 
 export async function deleteWidget(workspaceId: string, widgetId: string): Promise<boolean> {

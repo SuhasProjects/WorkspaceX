@@ -3,6 +3,8 @@ export type Role = "admin" | "member";
 export type Theme = "light" | "dark";
 export type TaskStatus = "todo" | "in_progress" | "done";
 export type WidgetSize = "small" | "medium" | "large";
+/** Gallery footprint in grid units (12 columns wide; rows are fixed-height units). */
+export interface WidgetSpan { cols: number; rows: number }
 export type JsonValue = null | boolean | number | string | JsonValue[] | { [key: string]: JsonValue };
 
 export interface Workspace { id: string; name: string; role: Role }
@@ -17,7 +19,7 @@ export interface Task {
   updatedAt: string;
 }
 export interface GeneratedWidget { title: string; html: string; size?: WidgetSize }
-export interface Widget extends GeneratedWidget { id: string; size: WidgetSize; createdAt: string }
+export interface Widget extends GeneratedWidget { id: string; size: WidgetSize; span?: WidgetSpan; createdAt: string }
 export interface ApiError { code: string; message: string }
 export type ApiResponse<T> = { data: T; error?: never } | { error: ApiError; data?: never };
 
@@ -32,7 +34,7 @@ export interface CreateTaskRequest { title: string; description?: string; dueDat
 export interface UpdateTaskRequest { title?: string; description?: string; dueDate?: string | null; dueTime?: string | null; status?: TaskStatus }
 export interface GenerateRequest { prompt: string; baseHtml?: string }
 export type SaveWidgetRequest = GeneratedWidget;
-export interface UpdateWidgetRequest { size: WidgetSize }
+export interface UpdateWidgetRequest { size?: WidgetSize; span?: WidgetSpan }
 export interface StorageQuery { widgetId: string; key: string }
 export interface WriteStorageRequest extends StorageQuery { value: JsonValue }
 export interface StorageResult { value: JsonValue; exists: boolean }
