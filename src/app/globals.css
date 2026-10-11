@@ -338,6 +338,7 @@ body { font-family: var(--wz-font-body); }
 }
 .brand { font-size: 21px; letter-spacing: .025em; }
 .brand-zero { color: var(--wz-text); font-weight: 300; }
+[data-theme="light"] :is(h1, h2, h3, h4, h5, h6, .brand, .brand-zero, .header-identity .workspace-name) { color: var(--wz-muted); }
 .workspace-intro h1 { letter-spacing: -.025em; }
 .builder h2 { letter-spacing: -.02em; line-height: 1.17; }
 .section-heading h2 { font-size: 20px; letter-spacing: .015em; }
