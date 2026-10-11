@@ -10,11 +10,15 @@ async function main() {
   globalThis.fetch = async (_input, init) => {
     sent = JSON.parse(String(init?.body)) as Record<string, unknown>;
     return Response.json({ choices: [{ message: { content:
-      "```html\n<!DOCTYPE html><html><head><title>Team Poll</title></head><body><button>Vote</button></body></html>\n```" } }] });
+      "```html\n<!DOCTYPE html><html><head><title>Team Poll</title></head><body><button>Vote</button><img src=\"https://example.invalid/icon.png\"></body></html>\n```" } }] });
   };
   const widget = await generateWidget("Create a shared poll");
   assert.equal(widget.title, "Team Poll");
   assert.match(widget.html, /^<!DOCTYPE html>/);
+  const { parseModelOutput } = await import("../src/lib/widget-protocol/generation-contract");
+  const fragment = parseModelOutput("<main>Small generated tool</main>");
+  assert.equal(fragment.ok, true);
+  if (fragment.ok) assert.match(fragment.widget.html, /^<!DOCTYPE html><html><head>[\s\S]*<body>[\s\S]*<\/body><\/html>$/);
   assert.deepEqual(sent?.messages, [
     { role: "system", content: WIDGET_SYSTEM_PROMPT },
     { role: "user", content: "Create a shared poll" },

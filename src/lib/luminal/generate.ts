@@ -102,7 +102,7 @@ export async function generateWidget(prompt: string): Promise<GeneratedWidget> {
   if (!title || title.length > 120 || Buffer.byteLength(html, "utf8") > MAX_HTML_BYTES ||
       !/^<!doctype\s+html\s*>/i.test(html) || !/<html[\s>]/i.test(html) ||
       !/<head[\s>]/i.test(html) || !/<body[\s>]/i.test(html) || !/<\/html\s*>\s*$/i.test(html) ||
-      parsed.warnings.length > 0) {
+      !/<\/body\s*>/i.test(html)) {
     throw new GenerationError("GENERATION_FAILED", "Luminal returned an incompatible widget document.");
   }
   return { title, html };

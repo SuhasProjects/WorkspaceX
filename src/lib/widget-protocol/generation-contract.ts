@@ -63,6 +63,29 @@ function decodeBasicEntities(text: string): string {
     .replace(/&amp;/g, "&");
 }
 
+function escapeTitle(text: string): string {
+  return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+/** Normalizes otherwise usable model fragments into the persisted full-document contract. */
+function completeDocument(html: string, title: string): string {
+  let content = html.replace(/^<!doctype\s+html\s*>/i, "").trim();
+  if (!/<html[\s>]/i.test(content)) {
+    return `<!DOCTYPE html><html><head><title>${escapeTitle(title)}</title></head><body>${content}</body></html>`;
+  }
+  if (!/<\/html\s*>\s*$/i.test(content)) content += "</html>";
+  if (!/<head[\s>]/i.test(content)) {
+    content = content.replace(/<html[^>]*>/i, `$&<head><title>${escapeTitle(title)}</title></head>`);
+  }
+  if (!/<body[\s>]/i.test(content)) {
+    const start = content.search(/<\/head\s*>/i);
+    const htmlEnd = content.search(/<\/html\s*>\s*$/i);
+    const insertion = start >= 0 ? content.indexOf(">", start) + 1 : content.indexOf(">") + 1;
+    content = `${content.slice(0, insertion)}<body>${content.slice(insertion, htmlEnd)}</body>${content.slice(htmlEnd)}`;
+  }
+  return `<!DOCTYPE html>${content}`;
+}
+
 /**
  * Turns raw model text into { title, html }. Tolerates prose or Markdown
  * fences around the document. Backend should still apply its own validation.
@@ -81,17 +104,17 @@ export function parseModelOutput(raw: string): ParseModelOutputResult {
   if (!/<(html|body|div|main|script)[\s>]/i.test(html)) {
     return { ok: false, error: "The model did not return an HTML document." };
   }
-  if (!/^<!DOCTYPE html/i.test(html)) html = "<!DOCTYPE html>\n" + html;
+  const titleMatch = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
+  const title = decodeBasicEntities(titleMatch?.[1] ?? "").replace(/\s+/g, " ").trim().slice(0, 80);
+  const resolvedTitle = title || FALLBACK_TITLE;
+  html = completeDocument(html, resolvedTitle);
   if (new TextEncoder().encode(html).length > LIMITS.maxWidgetHtmlBytes) {
     return { ok: false, error: "The generated widget is too large." };
   }
 
-  const titleMatch = html.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
-  const title = decodeBasicEntities(titleMatch?.[1] ?? "").replace(/\s+/g, " ").trim().slice(0, 80);
-
   return {
     ok: true,
-    widget: { title: title || FALLBACK_TITLE, html },
+    widget: { title: resolvedTitle, html },
     warnings: checkWidgetCompatibility(html),
   };
 }
