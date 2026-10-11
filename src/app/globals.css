@@ -129,13 +129,15 @@ button, a, textarea, input, select { outline-offset: 4px; }
 svg { flex-shrink: 0; }
 .dashboard-shell { position: relative; isolation: isolate; min-height: 100vh; padding: 24px 32px 0; overflow: clip; }
 .atmosphere { position: absolute; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
-.atmosphere svg { position: absolute; top: -90px; right: -150px; width: max(240%, 2800px); height: 1100px; color: rgba(169, 184, 210, .16); opacity: .9; }
+.atmosphere svg { position: absolute; top: -90px; right: -150px; width: max(240%, 2800px); height: 1100px; color: rgba(169, 184, 210, .22); opacity: .9; }
 .atmosphere-track { transform-box: view-box; animation: atmosphere-drift 80s linear infinite; will-change: transform; }
+.atmosphere-breath { transform-box: view-box; transform-origin: center; animation: atmosphere-breath 36s ease-in-out infinite alternate; will-change: transform; }
 @keyframes atmosphere-drift { from { transform: translateX(-50%); } to { transform: translateX(0); } }
+@keyframes atmosphere-breath { from { transform: scaleY(.88); } to { transform: scaleY(1.28); } }
 .atmosphere::after { content: ""; position: absolute; inset: 0; background: transparent; }
 [data-theme="light"] .atmosphere svg { opacity: .1; }
 [data-theme="light"] .atmosphere::after { background: transparent; }
-@media (prefers-reduced-motion: reduce) { .atmosphere-track { animation: none; will-change: auto; } }
+@media (prefers-reduced-motion: reduce) { .atmosphere-track, .atmosphere-breath { animation: none; will-change: auto; } }
 .skip-link { position: fixed; top: -80px; left: 24px; padding: 12px 20px; background: var(--wz-surface); z-index: 30; border: 2px solid var(--wz-accent); border-radius: 3px; }
 .skip-link:focus { top: 12px; }
 .workspace-header { max-width: 1320px; margin: auto; border: 1px solid var(--wz-border); border-radius: 3px; background: var(--glass); box-shadow: var(--glass-shadow); backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px); }

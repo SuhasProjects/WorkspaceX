@@ -1,5 +1,5 @@
 const WAVE_COUNT = 17;
-const WAVE_SPACING = 36;
+const WAVE_SPACING = 26;
 
 function waveContour(baseline: number, amplitude: number) {
   return `M 0 ${baseline} C 100 ${baseline + amplitude}, 300 ${baseline + amplitude}, 400 ${baseline} C 500 ${baseline - amplitude}, 700 ${baseline - amplitude}, 800 ${baseline} C 900 ${baseline + amplitude}, 1100 ${baseline + amplitude}, 1200 ${baseline} C 1300 ${baseline - amplitude}, 1500 ${baseline - amplitude}, 1600 ${baseline}`;
@@ -13,34 +13,36 @@ function waveBand(upper: number, upperAmplitude: number, lower: number, lowerAmp
 export function Atmosphere() {
   const waves = Array.from({ length: WAVE_COUNT }, (_, index) => ({
     baseline: 120 + index * WAVE_SPACING,
-    amplitude: 23 + (index % 3) * 2,
+    amplitude: 36,
   }));
 
   return (
     <div className="atmosphere" aria-hidden="true">
       <svg viewBox="0 0 3200 1100" preserveAspectRatio="xMidYMin slice">
         <g className="atmosphere-track">
-          {[-1600, 0, 1600, 3200].map((offset) => (
-            <g key={offset} transform={`translate(${offset} 0)`}>
-              {waves.slice(0, -1).map((wave, index) => (
-                <path
-                  key={`band-${index}`}
-                  d={waveBand(wave.baseline, wave.amplitude, waves[index + 1].baseline, waves[index + 1].amplitude)}
-                  fill="currentColor"
-                  fillOpacity=".12"
-                />
-              ))}
-              {waves.map((wave, index) => (
-                <path
-                  key={`line-${index}`}
-                  d={waveContour(wave.baseline, wave.amplitude)}
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.5"
-                />
-              ))}
-            </g>
-          ))}
+          <g className="atmosphere-breath">
+            {[-1600, 0, 1600, 3200].map((offset) => (
+              <g key={offset} transform={`translate(${offset} 0)`}>
+                {waves.slice(0, -1).map((wave, index) => (
+                  <path
+                    key={`band-${index}`}
+                    d={waveBand(wave.baseline, wave.amplitude, waves[index + 1].baseline, waves[index + 1].amplitude)}
+                    fill="currentColor"
+                    fillOpacity=".28"
+                  />
+                ))}
+                {waves.map((wave, index) => (
+                  <path
+                    key={`line-${index}`}
+                    d={waveContour(wave.baseline, wave.amplitude)}
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                  />
+                ))}
+              </g>
+            ))}
+          </g>
         </g>
       </svg>
     </div>
