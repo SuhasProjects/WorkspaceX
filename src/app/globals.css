@@ -421,6 +421,15 @@ body { font-family: var(--wz-font-body); }
 .tool-pane-frame { height: min(78vh, 920px); min-height: 420px; }
 /* ---- Tool editor (edit an existing tool with AI) ---- */
 .tool-editor-form { padding: 16px 24px; border-bottom: 1px solid var(--wz-border); display: grid; gap: 10px; }
+.tool-editor-section { display: grid; justify-items: start; gap: 10px; }
+.tool-editor-section strong { display: block; font-size: 12px; font-weight: 500; }
+.tool-editor-section p { margin-top: 3px; color: var(--wz-muted); font-size: 11px; }
+.tool-text-fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; width: 100%; }
+.tool-text-fields label { display: grid; gap: 5px; color: var(--wz-muted); font-size: 10px; letter-spacing: .06em; text-transform: uppercase; }
+.tool-text-fields input { min-width: 0; width: 100%; padding: 9px 10px; background: var(--inset); border: 1px solid var(--wz-border); border-radius: 3px; color: var(--wz-text); font: inherit; }
+.tool-text-fields input:focus { outline: none; border-color: var(--wz-accent); }
+.tool-editor-divider { display: flex; align-items: center; gap: 10px; color: var(--wz-muted); font-size: 9px; letter-spacing: .12em; text-transform: uppercase; }
+.tool-editor-divider::before, .tool-editor-divider::after { content: ""; flex: 1; height: 1px; background: var(--wz-border); }
 .tool-editor-label { font-size: 12px; color: var(--wz-muted); }
 .tool-editor-form textarea { width: 100%; resize: vertical; padding: 12px 14px; background: var(--inset); border: 1px solid var(--wz-border); border-radius: 3px; color: var(--wz-text); font: inherit; }
 .tool-editor-form textarea:focus { outline: none; border-color: var(--wz-accent); }
@@ -449,6 +458,7 @@ body { font-family: var(--wz-font-body); }
 .widget-card .widget-tools { padding: 7px 18px; }
 .widget-card-frame { flex: 1; min-height: 0; }
 .widget-card .tool-editor { flex: 1; min-height: 0; overflow: auto; }
+@media (max-width: 600px) { .tool-text-fields { grid-template-columns: 1fr; } }
 
 /* ---- Task board: drag between columns ---- */
 .task-card[draggable="true"] { cursor: grab; }
