@@ -41,6 +41,9 @@ THEME
 
 QUALITY
 - The widget must work immediately with no setup. Make it clean, modern, and usable.
+- Never leave the user stuck: if a choice is remembered (for example a vote), always show a clear way to change it. Do not permanently disable controls.
+- Selecting an option must give immediate visual feedback (highlight, checkmark, or count update) before and after saving.
+- Attach event handlers with addEventListener or on* properties after the elements exist (place scripts at the end of <body>).
 - Keep the whole document under 100 KB.`;
 
 export interface ParsedWidget {

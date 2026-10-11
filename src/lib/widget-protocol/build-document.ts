@@ -24,7 +24,8 @@ const BASE_CSS = [
   "font:14px/1.5 system-ui,-apple-system,'Segoe UI',Roboto,sans-serif}",
   ":where(button){font:inherit;cursor:pointer;padding:6px 12px;border-radius:6px;",
   "border:1px solid var(--wz-border);background:var(--wz-accent);color:var(--wz-accent-text)}",
-  ":where(input,textarea,select){font:inherit;padding:6px 8px;border-radius:6px;",
+  ":where(input:not([type=radio]):not([type=checkbox]):not([type=range]):not([type=color]):not([type=file]),",
+  "textarea,select){font:inherit;padding:6px 8px;border-radius:6px;",
   "border:1px solid var(--wz-border);background:var(--wz-surface);color:var(--wz-text)}",
 ].join("");
 

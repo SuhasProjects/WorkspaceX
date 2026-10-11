@@ -67,6 +67,11 @@ const RUNTIME_SOURCE = `(function () {
     setTimeout(function () { el.remove(); }, 3000);
   }
   try { window.alert = function (m) { showToast(m === undefined ? "" : m); }; } catch (_) {}
+  // confirm() always returns false in a sandbox, which silently blocks actions
+  // like "change your vote?". Auto-confirm and tell the user.
+  try {
+    window.confirm = function (m) { showToast((m === undefined ? "Confirmed" : String(m)) + " (auto-confirmed)"); return true; };
+  } catch (_) {}
 
   // Opaque-origin frames throw on localStorage access, which would crash the
   // widget at startup. Substitute a memory store (not persisted).
