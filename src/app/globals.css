@@ -56,7 +56,7 @@
 }
 [data-theme="light"] {
   --wz-background: #eceff3;
-  --wz-surface: #ffffff;
+  --wz-surface: rgba(255, 255, 255, .85);
   --wz-text: #141c28;
   --wz-muted: #141c28;
   --wz-accent: #39577f;
@@ -72,9 +72,9 @@
   --wz-purple: #745b9f;
   --wz-pink: #9a5274;
   --wz-border: rgba(61, 79, 107, .16);
-  --glass: #e2e7ed;
-  --glass-soft: #e2e7ed;
-  --inset: #dbe3ee;
+  --glass: rgba(226, 231, 237, .72);
+  --glass-soft: rgba(226, 231, 237, .6);
+  --inset: rgba(219, 227, 238, .35);
   --hover: rgba(65, 91, 137, .07);
   --glass-shadow: 0 16px 45px rgba(62, 77, 99, .07), inset 0 1px 0 rgba(255, 255, 255, .85);
   color-scheme: light;
@@ -261,7 +261,7 @@ svg { flex-shrink: 0; }
 .task-list { display: grid; gap: 10px; }
 .task-card { border: 1px solid var(--wz-border); border-radius: 0; background: var(--inset); padding: 15px; transition: background 180ms ease; }
 .task-card:hover { background: var(--hover); }
-[data-theme="light"] .task-card:hover { background: #d2dce9; }
+[data-theme="light"] .task-card:hover { background: rgba(210, 220, 233, .55); }
 .task-card h4 { font-size: 12px; font-weight: 500; line-height: 1.55; }
 .task-card p { font-size: 11px; color: var(--wz-muted); margin-top: 6px; line-height: 1.6; }
 .task-due { display: block; width: fit-content; margin-top: 8px; color: var(--wz-muted); font-size: 9px; letter-spacing: .05em; text-transform: uppercase; }
@@ -305,7 +305,7 @@ svg { flex-shrink: 0; }
 .tool-directory { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .tool-directory a { display: flex; align-items: center; gap: 13px; min-height: 94px; padding: 22px; font-size: 13px; }
 .tool-directory a:hover { background: var(--hover); transform: translateY(-2px); border-color: var(--wz-accent); }
-[data-theme="light"] .tool-directory a:hover { background: #dbe3ee; }
+[data-theme="light"] .tool-directory a:hover { background: rgba(219, 227, 238, .65); }
 .tool-directory a > svg { color: var(--wz-accent); }
 .tool-directory a > span { overflow-wrap: anywhere; }
 .tool-directory small { color: var(--wz-muted); font-size: 10px; white-space: nowrap; margin-left: auto; }
