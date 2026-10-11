@@ -16,9 +16,9 @@ export async function mockGenerateWidget(prompt: string): Promise<Widget> {
   return { id: crypto.randomUUID(), title: prompt.length > 65 ? `${prompt.slice(0, 62)}…` : prompt, html: "", createdAt: new Date().toISOString() };
 }
 
-export function readPreviewWidgets(): Widget[] {
+export function readPreviewWidgets(snapshot?: string | null): Widget[] {
   try {
-    const saved = sessionStorage.getItem("workspacezero.preview-widgets");
+    const saved = snapshot === undefined ? sessionStorage.getItem("workspacezero.preview-widgets") : snapshot;
     if (saved) {
       const parsed: unknown = JSON.parse(saved);
       if (Array.isArray(parsed) && parsed.every((item) => item && typeof item.id === "string" && typeof item.title === "string" && typeof item.html === "string")) return parsed;

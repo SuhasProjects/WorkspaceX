@@ -1,11 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useSyncExternalStore } from "react";
+
+function subscribeDate(callback: () => void) {
+  const timer = window.setInterval(callback, 60000);
+  return () => window.clearInterval(timer);
+}
+function currentDate() { return new Date().toDateString(); }
 
 export function Calendar() {
-  const [month, setMonth] = useState(new Date(2026, 9, 1));
-  const [today, setToday] = useState<Date | null>(null);
-  useEffect(() => { const date = new Date(); setToday(date); setMonth(new Date(date.getFullYear(), date.getMonth(), 1)); }, []);
+  const today = new Date(useSyncExternalStore(subscribeDate, currentDate, () => "Sun Oct 11 2026"));
+  const [selectedMonth, setMonth] = useState<Date | null>(null);
+  const month = selectedMonth ?? new Date(today.getFullYear(), today.getMonth(), 1);
   const label = month.toLocaleDateString("en-US", { month: "long", year: "numeric" });
   const offset = new Date(month.getFullYear(), month.getMonth(), 1).getDay();
   const days = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate();
