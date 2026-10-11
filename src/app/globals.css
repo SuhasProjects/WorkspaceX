@@ -72,8 +72,8 @@
   --wz-purple: #745b9f;
   --wz-pink: #9a5274;
   --wz-border: rgba(61, 79, 107, .16);
-  --glass: rgba(226, 231, 237, .96);
-  --glass-soft: rgba(226, 231, 237, .94);
+  --glass: rgba(226, 231, 237, 1);
+  --glass-soft: rgba(226, 231, 237, .99);
   --inset: rgba(219, 227, 238, .46);
   --hover: rgba(65, 91, 137, .07);
   --glass-shadow: 0 16px 45px rgba(62, 77, 99, .07), inset 0 1px 0 rgba(255, 255, 255, .85);
