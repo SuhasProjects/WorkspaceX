@@ -12,7 +12,7 @@ export function WorkspaceHeader({ workspace, theme, onTheme, onLogout }: {
 
   return <header className="workspace-header"><div className="header-inner">
     <div className="header-identity">
-      <div className="brand"><span className="brand-mark"><Icon name="sparkle" size={20} /></span><span>Workspace<span>Zero</span></span></div>
+      <div className="brand"><span className="brand-mark"><Icon name="sparkle" size={20} /></span><span>Workspace<span className="brand-zero">Zero</span></span></div>
       <span className="header-divider" aria-hidden="true" />
       <span className="workspace-name" title={workspace.name}>{workspace.name}</span>
       <span className="role-badge">{workspace.role === "admin" ? "Admin" : "Member"}</span>
