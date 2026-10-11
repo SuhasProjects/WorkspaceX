@@ -17,7 +17,7 @@ export function WidgetPage({ widgetId, preview = false }: { widgetId: string; pr
       {state.status === "loading" && <div className="page-state h-[calc(100vh-64px)]" role="status"><span className="spinner" /><p>Loading workspace tools…</p></div>}
       {state.status === "error" && <div className="page-state h-[calc(100vh-64px)]" role="alert"><h1>Unable to open this tool</h1><p>{state.message}</p><button type="button" onClick={retry}>Try again</button></div>}
       {state.status === "ready" && !widget && <div className="page-state h-[calc(100vh-64px)]"><h1>{widgets.length ? "Tool not found" : "No saved tools yet"}</h1><p>{widgets.length ? "This tool may have been deleted. Choose another tool above or return to the dashboard." : "Return to the dashboard to create your first team tool."}</p><Link href="/" className="text-link">Back to dashboard</Link></div>}
-      {state.status === "ready" && widget && <WidgetRenderer key={`${state.workspace.id}:${widget.id}`} widgetId={widget.id} workspaceId={state.workspace.id} html={widget.html} theme={theme} className="h-[calc(100vh-64px)]" />}
+      {state.status === "ready" && widget && <WidgetRenderer key={`${state.workspace.id}:${widget.id}`} widgetId={widget.id} workspaceId={state.workspace.id} html={widget.html} theme={theme} preview={preview} className="h-[calc(100vh-64px)]" />}
     </main>
   </div>;
 }

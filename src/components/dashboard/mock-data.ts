@@ -1,4 +1,7 @@
 import type { Task, Widget, Workspace } from "@/types/contracts";
+import { TEST_WIDGETS } from "@/components/widget-engine";
+
+const sampleHtml = (id: string) => TEST_WIDGETS.find((w) => w.id === id)?.html ?? "";
 
 // Removable Phase 1 fixtures; no authentication or persistence is simulated.
 export const mockWorkspace: Workspace = { id: "launch-team", name: "Launch team", role: "admin" };
@@ -10,8 +13,8 @@ export const mockTasks: Task[] = [
   { id: "task-4", title: "Agree on team interfaces", description: "One foundation. Three teammates.", status: "done", createdAt: timestamp, updatedAt: timestamp },
 ];
 export const mockWidgets: Widget[] = [
-  { id: "sample-poll", title: "What should we build next?", html: "", createdAt: timestamp },
-  { id: "sample-calculator", title: "Meeting cost calculator", html: "", createdAt: timestamp },
+  { id: "sample-poll", title: "What should we build next?", html: sampleHtml("test-poll"), createdAt: timestamp },
+  { id: "sample-expenses", title: "Team expense tracker", html: sampleHtml("test-expenses"), createdAt: timestamp },
 ];
 
 export async function mockGenerateWidget(prompt: string): Promise<Widget> {
