@@ -83,6 +83,10 @@ function completeDocument(html: string, title: string): string {
     const insertion = start >= 0 ? content.indexOf(">", start) + 1 : content.indexOf(">") + 1;
     content = `${content.slice(0, insertion)}<body>${content.slice(insertion, htmlEnd)}</body>${content.slice(htmlEnd)}`;
   }
+  if (!/<\/body\s*>/i.test(content)) {
+    const htmlEnd = content.search(/<\/html\s*>\s*$/i);
+    content = `${content.slice(0, htmlEnd)}</body>${content.slice(htmlEnd)}`;
+  }
   return `<!DOCTYPE html>${content}`;
 }
 
