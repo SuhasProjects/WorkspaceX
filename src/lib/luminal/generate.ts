@@ -21,7 +21,7 @@ const MAX_HTML_BYTES = 100 * 1024;
 const TIMEOUT_MS = 45_000;
 
 type ChatCompletion = {
-  choices?: Array<{ message?: { content?: unknown } }>;
+  choices?: Array<{ message?: { content?: unknown }; finish_reason?: unknown }>;
 };
 
 function providerConfig() {
@@ -57,7 +57,7 @@ export async function generateWidget(prompt: string): Promise<GeneratedWidget> {
     { role: "user", content: prompt.trim() },
   ];
   let response: Response | undefined;
-  for (const maxTokens of [3_500, 2_200]) {
+  for (const maxTokens of [8_000, 5_000]) {
     try {
       response = await fetch(endpoint, {
         method: "POST",
@@ -91,6 +91,9 @@ export async function generateWidget(prompt: string): Promise<GeneratedWidget> {
     completion = await response.json() as ChatCompletion;
   } catch {
     throw new GenerationError("GENERATION_FAILED", "Luminal returned an invalid response.");
+  }
+  if (completion?.choices?.[0]?.finish_reason === "length") {
+    throw new GenerationError("GENERATION_FAILED", "The widget was too long to generate. Try a simpler description.");
   }
   const raw = completion?.choices?.[0]?.message?.content;
   if (typeof raw !== "string") {
