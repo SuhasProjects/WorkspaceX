@@ -294,11 +294,13 @@ body { font-family: var(--wz-font-body); }
 .task-column h3 { font-size: 15px; letter-spacing: .025em; }
 .eyebrow, .ai-label { letter-spacing: .16em; }
 .header-inner { gap: 24px; }
+.dashboard-home { padding-top: 24px; }
 @media (max-width: 760px) {
   .header-identity { gap: 12px; }
   .header-identity .workspace-name { font-size: 16px; }
 }
 @media (max-width: 600px) {
+  .dashboard-home { padding-top: 18px; }
   .header-identity { flex: 1 1 100%; gap: 10px; }
   .header-identity .brand { font-size: 18px; }
   .header-identity .workspace-name { order: initial; flex-basis: auto; font-size: 16px; }
