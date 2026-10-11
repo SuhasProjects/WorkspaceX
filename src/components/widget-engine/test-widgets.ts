@@ -7,6 +7,63 @@ export interface TestWidget {
 
 export const TEST_WIDGETS: TestWidget[] = [
   {
+    id: "test-poll",
+    title: "Team poll (shared storage)",
+    html: `<h3 style="margin-top:0">Which project should we prioritize?</h3>
+<div id="opts"></div><p id="msg" style="color:var(--wz-muted)">Loading votes…</p>
+<script>
+  const OPTIONS = ["Mobile app", "Billing revamp", "Onboarding"];
+  let votes = {};
+  function render() {
+    const total = OPTIONS.reduce((s, o) => s + (votes[o] || 0), 0);
+    document.getElementById("opts").innerHTML = "";
+    for (const o of OPTIONS) {
+      const row = document.createElement("div");
+      row.style.margin = "8px 0";
+      const b = document.createElement("button");
+      b.type = "button";
+      b.textContent = "Vote: " + o + " (" + (votes[o] || 0) + ")";
+      b.onclick = () => vote(o);
+      row.appendChild(b);
+      document.getElementById("opts").appendChild(row);
+    }
+    document.getElementById("msg").textContent = total + " total votes";
+  }
+  async function vote(option) {
+    try {
+      votes = (await workspace.getShared("votes")) || {};
+      votes[option] = (votes[option] || 0) + 1;
+      await workspace.setShared("votes", votes);
+      render();
+    } catch (e) {
+      document.getElementById("msg").textContent = "Could not save vote: " + e.message;
+    }
+  }
+  workspace.getShared("votes")
+    .then((v) => { votes = v || {}; render(); })
+    .catch((e) => { document.getElementById("msg").textContent = "Could not load votes: " + e.message; });
+</script>`,
+  },
+  {
+    id: "test-notes",
+    title: "Personal notes (personal storage)",
+    html: `<textarea id="n" rows="6" style="width:100%;box-sizing:border-box" placeholder="Your private notes"></textarea>
+<p id="s" style="color:var(--wz-muted)">Loading…</p>
+<script>
+  const box = document.getElementById("n"), status = document.getElementById("s");
+  let timer;
+  workspace.getPersonal("notes").then((v) => { box.value = v || ""; status.textContent = "Saved in this browser only"; })
+    .catch((e) => { status.textContent = "Could not load: " + e.message; });
+  box.addEventListener("input", () => {
+    clearTimeout(timer);
+    status.textContent = "Saving…";
+    timer = setTimeout(() => workspace.setPersonal("notes", box.value)
+      .then(() => { status.textContent = "Saved"; })
+      .catch((e) => { status.textContent = "Could not save: " + e.message; }), 400);
+  });
+</script>`,
+  },
+  {
     id: "test-counter",
     title: "Counter (interaction + theme)",
     html: `<!DOCTYPE html><html><head><style>

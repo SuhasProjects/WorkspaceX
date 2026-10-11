@@ -20,7 +20,7 @@ export const WIDGET_CSP = [
 
 const BASE_CSS = [
   ":where(html,body){margin:0}",
-  ":where(body){background:var(--wz-bg);color:var(--wz-text);padding:16px;box-sizing:border-box;",
+  ":where(body){background:var(--wz-background);color:var(--wz-text);padding:16px;box-sizing:border-box;",
   "font:14px/1.5 system-ui,-apple-system,'Segoe UI',Roboto,sans-serif}",
   ":where(button){font:inherit;cursor:pointer;padding:6px 12px;border-radius:6px;",
   "border:1px solid var(--wz-border);background:var(--wz-accent);color:var(--wz-accent-text)}",

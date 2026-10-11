@@ -32,7 +32,7 @@ export const LIMITS = {
   readyTimeoutMs: 10_000,
 } as const;
 
-export const STORAGE_KEY_PATTERN = /^[A-Za-z0-9_.:-]{1,128}$/;
+export const STORAGE_KEY_PATTERN = /^[A-Za-z0-9_.-]{1,128}$/;
 const REQUEST_ID_PATTERN = /^[A-Za-z0-9_-]{1,64}$/;
 
 // ---------------------------------------------------------------------------
@@ -67,18 +67,17 @@ export type ChildMessage = WidgetRequestMessage | WidgetReadyMessage | WidgetErr
 // Parent -> child (widget iframe)
 // ---------------------------------------------------------------------------
 
+/** Backend API error codes (docs/api-contracts.md) plus the engine-only TIMEOUT. */
 export type WidgetErrorCode =
-  | "BAD_REQUEST"
-  | "INVALID_KEY"
-  | "INVALID_VALUE"
-  | "PAYLOAD_TOO_LARGE"
-  | "TOO_MANY_REQUESTS"
-  | "TIMEOUT"
-  | "UNAUTHORIZED"
+  | "INVALID_INPUT"
+  | "UNAUTHENTICATED"
   | "FORBIDDEN"
   | "NOT_FOUND"
-  | "STORAGE_UNAVAILABLE"
-  | "INTERNAL";
+  | "PAYLOAD_TOO_LARGE"
+  | "RATE_LIMITED"
+  | "SERVICE_UNAVAILABLE"
+  | "INTERNAL_ERROR"
+  | "TIMEOUT";
 
 export interface WidgetProtocolError {
   code: WidgetErrorCode;
@@ -177,7 +176,7 @@ export function parseChildMessage(data: unknown): ParseResult | null {
     case "request": {
       const { requestId, action, key } = data;
       if (typeof requestId !== "string" || !REQUEST_ID_PATTERN.test(requestId)) {
-        return { ok: false, error: { code: "BAD_REQUEST", message: "Invalid requestId" } };
+        return { ok: false, error: { code: "INVALID_INPUT", message: "Invalid requestId" } };
       }
       const fail = (code: WidgetErrorCode, message: string): ParseResult => ({
         ok: false,
@@ -186,12 +185,12 @@ export function parseChildMessage(data: unknown): ParseResult | null {
       });
 
       if (typeof action !== "string" || !STORAGE_ACTIONS.includes(action as StorageAction)) {
-        return fail("BAD_REQUEST", "Unknown action");
+        return fail("INVALID_INPUT", "Unknown action");
       }
       if (!isValidStorageKey(key)) {
         return fail(
-          "INVALID_KEY",
-          "Storage keys must be 1-128 characters of letters, digits, _ . : -",
+          "INVALID_INPUT",
+          "Storage keys must be 1-128 characters of letters, digits, dot, underscore, or hyphen",
         );
       }
 
@@ -210,7 +209,7 @@ export function parseChildMessage(data: unknown): ParseResult | null {
       }
 
       if (!("value" in data) || !isJsonValue(data.value)) {
-        return fail("INVALID_VALUE", "Value must be JSON-compatible");
+        return fail("INVALID_INPUT", "Value must be JSON-compatible");
       }
       if (jsonByteSize(data.value) > LIMITS.maxValueBytes) {
         return fail("PAYLOAD_TOO_LARGE", `Value exceeds ${LIMITS.maxValueBytes} bytes`);
@@ -229,6 +228,6 @@ export function parseChildMessage(data: unknown): ParseResult | null {
     }
 
     default:
-      return { ok: false, error: { code: "BAD_REQUEST", message: "Unknown message kind" } };
+      return { ok: false, error: { code: "INVALID_INPUT", message: "Unknown message kind" } };
   }
 }

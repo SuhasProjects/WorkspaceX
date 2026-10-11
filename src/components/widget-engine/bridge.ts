@@ -1,10 +1,20 @@
 import {
+  LIMITS,
   WIDGET_CHANNEL,
   parseChildMessage,
+  type JsonValue,
   type ParentMessage,
   type WidgetProtocolError,
+  type WidgetRequestMessage,
   type WidgetTheme,
 } from "../../lib/widget-protocol/protocol";
+import {
+  StorageError,
+  createMemoryStorage,
+  getSharedAdapter,
+  personalLocalStorage,
+  type StorageAdapter,
+} from "./storage-adapters";
 
 export interface WidgetRegistration {
   widgetId: string;
@@ -58,16 +68,96 @@ function handleMessage(event: MessageEvent) {
         registration.onRuntimeError(message.message);
         break;
       case "request":
-        // Storage routing arrives in Milestone 2.
-        respondError(source, message.requestId, {
-          code: "STORAGE_UNAVAILABLE",
-          message: "Widget storage is not enabled yet.",
-        });
+        void handleRequest(source, registration, message);
         break;
     }
   } catch {
     // A failing host callback must never break the bridge.
   }
+}
+
+function withTimeout<T>(promise: Promise<T>): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(
+      () => reject(new StorageError("TIMEOUT", "Storage request timed out.")),
+      LIMITS.requestTimeoutMs,
+    );
+    promise.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (err) => {
+        clearTimeout(timer);
+        reject(err);
+      },
+    );
+  });
+}
+
+async function handleRequest(
+  source: Window,
+  registration: WidgetRegistration,
+  request: WidgetRequestMessage,
+) {
+  const state = stateFor(registration);
+  if (state.inFlight >= LIMITS.maxInFlightPerWidget) {
+    respondError(source, request.requestId, {
+      code: "RATE_LIMITED",
+      message: "Too many storage requests at once.",
+    });
+    return;
+  }
+
+  // Scope comes from the registration (trusted React props), never from the message.
+  const scope = { workspaceId: registration.workspaceId, widgetId: registration.widgetId };
+  const isShared = request.action === "getShared" || request.action === "setShared";
+  const adapter = registration.preview
+    ? isShared
+      ? state.previewShared
+      : state.previewPersonal
+    : isShared
+      ? getSharedAdapter()
+      : personalLocalStorage;
+
+  state.inFlight++;
+  let response: ParentMessage;
+  try {
+    let value: JsonValue = null;
+    if (request.action === "getShared" || request.action === "getPersonal") {
+      value = await withTimeout(adapter.get(scope, request.key));
+    } else {
+      await withTimeout(adapter.set(scope, request.key, request.value ?? null));
+    }
+    response = { channel: WIDGET_CHANNEL, kind: "response", requestId: request.requestId, ok: true, value };
+  } catch (err) {
+    const error =
+      err instanceof StorageError
+        ? { code: err.code, message: err.message }
+        : { code: "INTERNAL_ERROR" as const, message: "Storage request failed." };
+    response = { channel: WIDGET_CHANNEL, kind: "response", requestId: request.requestId, ok: false, error };
+  } finally {
+    state.inFlight--;
+  }
+
+  // The widget may have been unmounted or replaced while we waited.
+  if (registry.get(source) === registration) send(source, response);
+}
+
+interface RegistrationState {
+  inFlight: number;
+  previewShared: StorageAdapter;
+  previewPersonal: StorageAdapter;
+}
+const states = new WeakMap<WidgetRegistration, RegistrationState>();
+
+function stateFor(registration: WidgetRegistration): RegistrationState {
+  let state = states.get(registration);
+  if (!state) {
+    state = { inFlight: 0, previewShared: createMemoryStorage(), previewPersonal: createMemoryStorage() };
+    states.set(registration, state);
+  }
+  return state;
 }
 
 export function registerWidgetFrame(frame: Window, registration: WidgetRegistration): () => void {

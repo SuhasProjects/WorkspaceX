@@ -3,7 +3,7 @@ import type { WidgetTheme } from "./protocol";
 /** CSS variables every widget can use. Values mirror Minimal Light / Obsidian Dark. */
 export const THEME_TOKENS: Record<WidgetTheme, Record<string, string>> = {
   light: {
-    "--wz-bg": "#ffffff",
+    "--wz-background": "#ffffff",
     "--wz-surface": "#f6f7f9",
     "--wz-text": "#111827",
     "--wz-muted": "#6b7280",
@@ -14,7 +14,7 @@ export const THEME_TOKENS: Record<WidgetTheme, Record<string, string>> = {
     "--wz-success": "#16a34a",
   },
   dark: {
-    "--wz-bg": "#0b0d10",
+    "--wz-background": "#0b0d10",
     "--wz-surface": "#15181d",
     "--wz-text": "#e6e8eb",
     "--wz-muted": "#9aa3ae",
