@@ -1,18 +1,19 @@
-import { setWorkspaceSubscription } from "@/lib/db/repository";
+import { countTeamSeats, setUserSubscription } from "@/lib/db/accounts";
 import { checkOrigin, failure, HttpError, onlyFields, readJsonObject, success } from "@/lib/auth/http";
-import { requireSession } from "@/lib/auth/session";
+import { requireUser } from "@/lib/auth/session";
 import { BillingUnavailableError, getBillingProvider } from "@/lib/billing/provider";
 
 export const runtime = "nodejs";
 /**
- * Starts a checkout for a paid plan. This never activates the plan: the
- * workspace is marked "pending" and only a verified provider webhook can mark
- * it "active".
+ * Starts a checkout for a paid plan on the signed-in account. This never
+ * activates the plan: the account is marked "pending" and only a verified
+ * provider webhook can mark it "active". Team seats are counted across every
+ * workspace the account owns.
  */
 export async function POST(request: Request) {
   try {
     checkOrigin(request);
-    const session = await requireSession("admin");
+    const { user } = await requireUser();
     const body = await readJsonObject(request);
     onlyFields(body, ["plan"]);
     if (body.plan !== "pro" && body.plan !== "team") {
@@ -23,8 +24,8 @@ export async function POST(request: Request) {
       throw new HttpError(503, "SERVICE_UNAVAILABLE", "Paid plans are coming soon. Billing is not connected yet.");
     }
     const returnUrl = new URL("/pricing?checkout=return", request.url).toString();
-    const checkout = await provider.createCheckoutSession({ workspaceId: session.workspaceId, plan: body.plan, returnUrl });
-    await setWorkspaceSubscription(session.workspaceId, { plan: body.plan, status: "pending", externalId: checkout.sessionId });
+    const checkout = await provider.createCheckoutSession({ userId: user._id, plan: body.plan, seats: body.plan === "team" ? await countTeamSeats(user._id) : 1, returnUrl });
+    await setUserSubscription(user._id, { plan: body.plan, status: "pending", externalId: checkout.sessionId });
     return success({ url: checkout.url });
   } catch (error) {
     if (error instanceof BillingUnavailableError) return failure(new HttpError(503, "SERVICE_UNAVAILABLE", error.message));

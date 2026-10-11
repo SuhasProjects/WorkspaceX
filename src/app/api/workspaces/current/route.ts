@@ -1,13 +1,11 @@
-import { getWorkspace } from "@/lib/db/repository";
-import { failure, HttpError, success } from "@/lib/auth/http";
-import { requireSession } from "@/lib/auth/session";
+import { failure, success } from "@/lib/auth/http";
+import { requireWorkspace } from "@/lib/auth/session";
 
 export const runtime = "nodejs";
+/** The selected workspace with the user's current role and the owner's effective plan. */
 export async function GET() {
   try {
-    const session = await requireSession();
-    const workspace = await getWorkspace(session.workspaceId);
-    if (!workspace) throw new HttpError(404, "NOT_FOUND", "Workspace not found.");
-    return success({ workspace: { ...workspace, role: session.role } });
+    const { workspace } = await requireWorkspace();
+    return success({ workspace });
   } catch (error) { return failure(error); }
 }

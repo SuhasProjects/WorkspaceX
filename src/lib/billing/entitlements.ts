@@ -1,6 +1,6 @@
 import "server-only";
 import { HttpError } from "@/lib/auth/http";
-import { getWorkspace } from "@/lib/db/repository";
+import { getWorkspacePlan } from "@/lib/db/accounts";
 import { hasFeature, type PlanFeature } from "./plans";
 
 /**
@@ -22,9 +22,8 @@ const FEATURE_LABELS: Record<PlanFeature, string> = {
 /** Throws 403 PLAN_FEATURE_REQUIRED when gating is on and the plan lacks the feature. */
 export async function requireFeature(workspaceId: string, feature: PlanFeature): Promise<void> {
   if (!featureGatingEnabled()) return;
-  const workspace = await getWorkspace(workspaceId);
-  if (!workspace) throw new HttpError(404, "NOT_FOUND", "Workspace not found.");
-  if (!hasFeature(workspace.plan, feature)) {
+  const { plan } = await getWorkspacePlan(workspaceId);
+  if (!hasFeature(plan, feature)) {
     throw new HttpError(403, "PLAN_FEATURE_REQUIRED", `${FEATURE_LABELS[feature]} requires a higher plan.`);
   }
 }

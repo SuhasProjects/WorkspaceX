@@ -70,6 +70,14 @@ export async function getDatabase(): Promise<Db> {
   const state = globals.workspacezeroMongo!;
   if (!state.indexes.has(name)) {
     const indexes = Promise.all([
+      db.collection("users").createIndex({ usernameNormalized: 1 }, { unique: true }),
+      db.collection("workspaces").createIndex({ ownerUserId: 1, createdAt: 1 }),
+      db.collection("workspaceMemberships").createIndex({ workspaceId: 1, userId: 1 }, { unique: true }),
+      db.collection("workspaceMemberships").createIndex({ userId: 1, createdAt: 1 }),
+      db.collection("workspaceMemberships").createIndex({ workspaceId: 1, role: 1 }, { unique: true, partialFilterExpression: { role: "owner" } }),
+      db.collection("workspaceInvitations").createIndex({ invitedUserId: 1, status: 1, createdAt: -1 }),
+      db.collection("workspaceInvitations").createIndex({ workspaceId: 1, status: 1 }),
+      db.collection("workspaceInvitations").createIndex({ workspaceId: 1, invitedUserId: 1 }, { unique: true, partialFilterExpression: { status: "pending" } }),
       db.collection("widgets").createIndex({ workspaceId: 1, createdAt: 1, _id: 1 }),
       db.collection("tasks").createIndex({ workspaceId: 1, createdAt: 1, _id: 1 }),
       db.collection("widgetData").createIndex({ workspaceId: 1, widgetId: 1, key: 1 }, { unique: true }),

@@ -1,6 +1,7 @@
 import { deleteTask, updateTask } from "@/lib/db/repository";
 import { checkOrigin, failure, HttpError, onlyFields, readJsonObject, success } from "@/lib/auth/http";
-import { requireSession } from "@/lib/auth/session";
+import { requireWorkspace, requireWorkspaceRole } from "@/lib/auth/session";
+import { canManage } from "@/lib/auth/roles";
 import { DatabaseError } from "@/lib/db/client";
 import type { UpdateTaskRequest } from "@/types/contracts";
 
@@ -14,11 +15,11 @@ function databaseFailure(error: unknown) {
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     checkOrigin(request);
-    const session = await requireSession();
+    const { workspace, role } = await requireWorkspace();
     const body = await readJsonObject(request);
     onlyFields(body, ["title", "description", "dueDate", "dueTime", "status"]);
     // Members may move a task between columns (status only); everything else is admin-only.
-    if (session.role !== "admin" && Object.keys(body).some((key) => key !== "status")) {
+    if (!canManage(role) && Object.keys(body).some((key) => key !== "status")) {
       throw new HttpError(403, "FORBIDDEN", "Admin access is required to edit task details.");
     }
     if (!Object.keys(body).length || (body.title !== undefined && typeof body.title !== "string") ||
@@ -29,7 +30,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       throw new HttpError(400, "INVALID_INPUT", "Provide at least one valid task field.");
     }
     const { id } = await params;
-    const task = await updateTask(session.workspaceId, id, body as UpdateTaskRequest);
+    const task = await updateTask(workspace.id, id, body as UpdateTaskRequest);
     if (!task) throw new HttpError(404, "NOT_FOUND", "Task not found.");
     return success({ task });
   } catch (error) { return databaseFailure(error); }
@@ -38,9 +39,9 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     checkOrigin(request);
-    const session = await requireSession("admin");
+    const { workspace } = await requireWorkspaceRole("admin");
     const { id } = await params;
-    if (!(await deleteTask(session.workspaceId, id))) throw new HttpError(404, "NOT_FOUND", "Task not found.");
+    if (!(await deleteTask(workspace.id, id))) throw new HttpError(404, "NOT_FOUND", "Task not found.");
     return success({ success: true });
   } catch (error) { return databaseFailure(error); }
 }

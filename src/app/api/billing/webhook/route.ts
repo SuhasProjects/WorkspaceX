@@ -1,4 +1,4 @@
-import { setWorkspaceSubscription } from "@/lib/db/repository";
+import { setUserSubscription } from "@/lib/db/accounts";
 import { failure, HttpError, success } from "@/lib/auth/http";
 import { BillingUnavailableError, getBillingProvider, type SubscriptionEvent } from "@/lib/billing/provider";
 
@@ -15,8 +15,8 @@ export async function POST(request: Request) {
     const event: SubscriptionEvent = await getBillingProvider().parseWebhook(request);
     const status = ({ activated: "active", renewed: "active", past_due: "past_due", canceled: "canceled" } as const)[event.type];
     // TODO when the real provider lands: record event.eventId and skip duplicates (idempotency).
-    const workspace = await setWorkspaceSubscription(event.workspaceId, { plan: event.plan, status, externalId: event.externalId });
-    if (!workspace) throw new HttpError(404, "NOT_FOUND", "Workspace not found.");
+    const account = await setUserSubscription(event.userId, { plan: event.plan, status, externalId: event.externalId });
+    if (!account) throw new HttpError(404, "NOT_FOUND", "Account not found.");
     return success({ success: true });
   } catch (error) {
     if (error instanceof BillingUnavailableError) return failure(new HttpError(501, "NOT_IMPLEMENTED", error.message));

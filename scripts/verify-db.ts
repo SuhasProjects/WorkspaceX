@@ -7,7 +7,8 @@ async function main() {
   loadEnvConfig(process.cwd());
   verificationStage = "import database modules";
   const { getDatabase, closeDatabase, DatabaseError } = await import("../src/lib/db/client");
-  const { createWorkspace, getWorkspace, createTask, listTasks, updateTask, deleteTask, createWidget, getWidget, listWidgets, deleteWidget } = await import("../src/lib/db/repository");
+  const { createTask, listTasks, updateTask, deleteTask, createWidget, getWidget, listWidgets, deleteWidget } = await import("../src/lib/db/repository");
+  const { createUser, createWorkspace, getWorkspaceForUser } = await import("../src/lib/db/accounts");
   const workspaceId = `verify-${randomUUID()}`;
   const otherWorkspaceId = `verify-${randomUUID()}`;
   let created = false;
@@ -19,10 +20,11 @@ async function main() {
     console.log("PASS: MongoDB connected; indexes initialized.");
     // Unique test-only hashes, never accepted by the future auth password verifier.
     const fixtureHash = () => `test-only:${scryptSync(randomUUID(), randomUUID(), 32).toString("hex")}`;
-    await createWorkspace({ id: workspaceId, name: "Persistence verification", adminPasswordHash: fixtureHash(), memberPasswordHash: fixtureHash() });
+    const owner = await createUser({ username: `verify-${randomUUID().slice(0, 8)}`, usernameNormalized: `verify-${randomUUID().slice(0, 8)}`, passwordHash: fixtureHash() });
+    await createWorkspace({ id: workspaceId, name: "Persistence verification", ownerUserId: owner._id });
     created = true;
-    assert.deepEqual(await getWorkspace(workspaceId), { id: workspaceId, name: "Persistence verification" });
-    await assert.rejects(() => createWorkspace({ id: workspaceId, name: "Duplicate", adminPasswordHash: fixtureHash(), memberPasswordHash: fixtureHash() }), (error: unknown) => error instanceof DatabaseError && error.code === "CONFLICT");
+    assert.equal((await getWorkspaceForUser(workspaceId, owner._id))?.name, "Persistence verification");
+    await assert.rejects(() => createWorkspace({ id: workspaceId, name: "Duplicate", ownerUserId: owner._id }), (error: unknown) => error instanceof DatabaseError && error.code === "CONFLICT");
     const task = await createTask(workspaceId, { title: "Verify task persistence", description: "Stored in MongoDB" });
     assert.deepEqual(await listTasks(workspaceId), [task]);
     const updatedTask = await updateTask(workspaceId, task.id, { status: "done" });

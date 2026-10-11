@@ -16,7 +16,8 @@ export interface CheckoutSession {
 
 export interface SubscriptionEvent {
   type: "activated" | "renewed" | "past_due" | "canceled";
-  workspaceId: string;
+  /** The paying account. Subscriptions belong to users, never to a single workspace. */
+  userId: string;
   plan: Exclude<Plan, "free">;
   externalId: string;
   /** Provider event id, used for idempotency. */
@@ -27,7 +28,7 @@ export interface BillingProvider {
   readonly name: string;
   /** True when real checkouts can be started. */
   readonly available: boolean;
-  createCheckoutSession(input: { workspaceId: string; plan: Exclude<Plan, "free">; returnUrl: string }): Promise<CheckoutSession>;
+  createCheckoutSession(input: { userId: string; plan: Exclude<Plan, "free">; seats: number; returnUrl: string }): Promise<CheckoutSession>;
   /**
    * Verifies a webhook's authenticity (signature, timestamp) and turns it into
    * a SubscriptionEvent. Must throw on any verification failure.
