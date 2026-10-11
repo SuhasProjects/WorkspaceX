@@ -503,3 +503,4 @@ body { font-family: var(--wz-font-body); }
 [data-theme="light"] textarea::placeholder { color: #303b4b !important; opacity: 1; }
 [data-theme="light"] .workspace-tab-action { font-weight: 500; }
 [data-theme="light"] :is(.pricing-button.primary, .task-create-toggle, .task-create-actions button[type="submit"]) { background: var(--hover); }
+.pricing-seats { font-size: 12px; color: var(--wz-muted); margin-top: -4px; }

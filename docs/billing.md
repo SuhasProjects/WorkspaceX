@@ -8,7 +8,7 @@ exact steps to connect the AWS monetization service.
 
 | | Free | Pro | Team |
 | --- | --- | --- | --- |
-| Price | $0/mo | $5/mo | $15/mo |
+| Price | $0/mo | $12/mo | $50/mo for 10 members, +$25/mo per extra member |
 | AI generations / month | 3 | 20 | 100 |
 | Active tools | 3 | Unlimited | Unlimited |
 | Team members | 1 | 1 | Unlimited |
@@ -32,6 +32,11 @@ What is enforced today:
   member sign-in return `PLAN_FEATURE_REQUIRED` below Team.
 - **Team members** and **Workspaces** are display-only: the app has no user
   accounts, so there is nothing to count yet.
+
+Team pricing is seat-based: `monthlyPriceFor(plan, members)` in `plans.ts`
+computes the charge, and the checkout call must send the seat count to the
+billing service once accounts make it countable. Until then checkout uses the
+10-member base price.
 
 ## Data model
 

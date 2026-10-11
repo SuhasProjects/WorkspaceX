@@ -62,6 +62,7 @@ export function PricingPage() {
           return <section key={plan.id} className={`pricing-card${highlighted ? " is-highlighted" : ""}${isCurrent ? " is-current" : ""}`} aria-label={`${plan.name} plan`}>
             <span className="eyebrow">{plan.name}{isCurrent && <span className="pricing-badge">Current</span>}</span>
             <p className="pricing-price"><span className="pricing-amount">${plan.priceMonthly}</span><span className="pricing-period">/month</span></p>
+            {plan.includedMembers && plan.extraMemberPrice && <p className="pricing-seats">Covers {plan.includedMembers} members · +${plan.extraMemberPrice}/month per additional member</p>}
             <p className="pricing-tagline">{plan.tagline}</p>
             <p className="pricing-limit">{plan.generationLimit} AI generations / month · {plan.widgetLimit === null ? "unlimited" : plan.widgetLimit} tools</p>
             {plan.id === "free"
