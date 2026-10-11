@@ -64,12 +64,12 @@ export function useWorkspaceWidgets(preview = false) {
     return () => controller.abort();
   }, [revision, preview]);
   function retry() { setState({ status: "loading" }); setRevision((value) => value + 1); }
-  /** Moves a widget one slot left (-1) or right (+1) in every tab list. */
-  function moveWidget(id: string, delta: -1 | 1) {
-    if (state.status !== "ready") return;
+  /** Drops `draggedId` into `targetId`'s slot; everything else keeps its relative order. */
+  function reorderWidget(draggedId: string, targetId: string) {
+    if (state.status !== "ready" || draggedId === targetId) return;
     const ids = state.widgets.map((widget) => widget.id);
-    const from = ids.indexOf(id), to = from + delta;
-    if (from < 0 || to < 0 || to >= ids.length) return;
+    const from = ids.indexOf(draggedId), to = ids.indexOf(targetId);
+    if (from < 0 || to < 0) return;
     ids.splice(to, 0, ids.splice(from, 1)[0]);
     writeOrder(state.workspace.id, ids);
     setState({ ...state, widgets: applyOrder(state.widgets, ids) });
@@ -88,7 +88,7 @@ export function useWorkspaceWidgets(preview = false) {
   }
   const resolvedState: WorkspaceState = preview ? { status: "ready", workspace: mockWorkspace, widgets: previewWidgets } : state;
   void orderVersion;
-  return { state: resolvedState, retry, moveWidget, removeWidget };
+  return { state: resolvedState, retry, reorderWidget, removeWidget };
 }
 
 function previewSnapshot(): string | null {

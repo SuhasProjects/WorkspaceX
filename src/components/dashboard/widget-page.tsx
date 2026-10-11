@@ -9,7 +9,7 @@ import { Atmosphere } from "./atmosphere";
 import { ToolManageBar } from "./tool-manage-bar";
 
 export function WidgetPage({ widgetId, preview = false }: { widgetId: string; preview?: boolean }) {
-  const { state, retry, moveWidget, removeWidget } = useWorkspaceWidgets(preview);
+  const { state, retry, removeWidget } = useWorkspaceWidgets(preview);
   const router = useRouter();
   const isAdmin = state.status === "ready" && state.workspace.role === "admin" && !preview;
   const theme = useWidgetTheme();
@@ -19,13 +19,12 @@ export function WidgetPage({ widgetId, preview = false }: { widgetId: string; pr
   }
   const widgets = state.status === "ready" ? state.widgets : [];
   const widget = widgets.find((item) => item.id === widgetId);
-  const position = widgets.findIndex((item) => item.id === widgetId);
 
   return <div className="dashboard-shell min-h-screen" data-theme={theme}>
     <Atmosphere />
     <a className="skip-link" href="#widget-content">Skip to tool</a>
     <nav className="widget-page-nav" aria-label="Workspace tools"><Link href="/">← Dashboard</Link>{preview && <span className="preview-label">Mock preview</span>}<div className="widget-page-links">{widgets.map((item) => <Link key={item.id} href={`/widgets/${encodeURIComponent(item.id)}${preview ? "?preview=1" : ""}`} aria-current={item.id === widgetId ? "page" : undefined}>{item.title}</Link>)}</div><button type="button" className="icon-button" aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} theme`} onClick={toggleTheme}><Icon name="moon" /></button></nav>
-    {isAdmin && widget && <ToolManageBar widget={widget} position={position} count={widgets.length} onMove={moveWidget} onDelete={removeWidget} onDeleted={() => router.push("/")} />}
+    {isAdmin && widget && <ToolManageBar widget={widget} onDelete={removeWidget} onDeleted={() => router.push("/")} />}
     <main id="widget-content">
       {state.status === "loading" && <div className="page-state h-[calc(100vh-64px)]" role="status"><span className="spinner" /><p>Loading workspace tools…</p></div>}
       {state.status === "signed_out" && <div className="page-state h-[calc(100vh-64px)]"><h1>Sign in required</h1><p>Open the dashboard and sign in to this workspace.</p><Link href="/" className="text-link">Go to sign in</Link></div>}

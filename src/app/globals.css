@@ -292,6 +292,9 @@ body { font-family: var(--wz-font-body); }
 .wz-tool-btn:hover:not(:disabled) { background: var(--hover); }
 .wz-tool-btn:disabled { opacity: .4; }
 .wz-tool-btn.danger { color: var(--wz-danger); border-color: var(--wz-danger); }
+.workspace-tab-list a[draggable="true"] { cursor: grab; }
+.workspace-tab-list a.is-dragging { opacity: .35; }
+.workspace-tab-list a.is-drop-target { box-shadow: inset 2px 0 0 var(--wz-accent); background: var(--hover); }
 
 /* ---- Dashboard: tool shown inline under the tabs ---- */
 .tool-pane { border: 1px solid var(--wz-border); border-radius: 3px; background: var(--glass-soft); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); overflow: hidden; }

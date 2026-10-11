@@ -37,7 +37,9 @@ export function Dashboard() {
   const [selectedDueDate, setSelectedDueDate] = useState<string | null>(null);
   const [preview, setPreview] = useState<GeneratedWidget | null>(null);
   const theme = useWidgetTheme();
-  const { state, retry, moveWidget, removeWidget } = useWorkspaceWidgets();
+  const { state, retry, reorderWidget, removeWidget } = useWorkspaceWidgets();
+  const [dragging, setDragging] = useState<string | null>(null);
+  const [dropTarget, setDropTarget] = useState<string | null>(null);
   const workspaceId = state.status === "ready" ? state.workspace.id : null;
   const activeTool = useActiveTool();
 
@@ -126,7 +128,17 @@ export function Dashboard() {
       <section className="workspace-tabs" aria-label="Workspace pages">
         <nav className="workspace-tab-list">
           <Link href="/" aria-current={activeWidget ? undefined : "page"} onClick={(event) => { event.preventDefault(); setActiveTool(null); }}>Dashboard</Link>
-          {widgets.map((widget) => <a key={widget.id} href={`/?tool=${encodeURIComponent(widget.id)}`} aria-current={widget.id === activeTool ? "page" : undefined} onClick={(event) => { event.preventDefault(); setActiveTool(widget.id); }}>{widget.title}</a>)}
+          {widgets.map((widget) => <a key={widget.id} href={`/?tool=${encodeURIComponent(widget.id)}`}
+            aria-current={widget.id === activeTool ? "page" : undefined}
+            className={`${dragging === widget.id ? "is-dragging" : ""} ${dropTarget === widget.id ? "is-drop-target" : ""}`}
+            draggable={workspace.role === "admin"}
+            onClick={(event) => { event.preventDefault(); setActiveTool(widget.id); }}
+            onDragStart={(event) => { event.dataTransfer.effectAllowed = "move"; event.dataTransfer.setData("text/plain", widget.id); setDragging(widget.id); }}
+            onDragOver={(event) => { if (!dragging) return; event.preventDefault(); event.dataTransfer.dropEffect = "move"; if (dropTarget !== widget.id) setDropTarget(widget.id); }}
+            onDragLeave={() => { if (dropTarget === widget.id) setDropTarget(null); }}
+            onDrop={(event) => { event.preventDefault(); if (dragging) reorderWidget(dragging, widget.id); setDragging(null); setDropTarget(null); }}
+            onDragEnd={() => { setDragging(null); setDropTarget(null); }}
+            title={workspace.role === "admin" ? "Drag to reorder" : undefined}>{widget.title}</a>)}
         </nav>
         {workspace.role === "admin" && <a href="#tool-prompt" className="workspace-tab-action"><Icon name="plus" size={14} />New tool</a>}
       </section>
