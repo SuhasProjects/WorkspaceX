@@ -48,6 +48,28 @@ export function prepareWorkspaceRevealSound(): WorkspaceRevealSound {
           echoGain.connect(context.destination);
           warmth.connect(master);
 
+          const breath = context.createBufferSource();
+          const breathBuffer = context.createBuffer(1, context.sampleRate, context.sampleRate);
+          const breathSamples = breathBuffer.getChannelData(0);
+          for (let sample = 0; sample < breathSamples.length; sample += 1) {
+            breathSamples[sample] = Math.random() * 2 - 1;
+          }
+          breath.buffer = breathBuffer;
+          const breathFilter = context.createBiquadFilter();
+          breathFilter.type = "bandpass";
+          breathFilter.frequency.setValueAtTime(900, now);
+          breathFilter.frequency.exponentialRampToValueAtTime(2600, now + 0.9);
+          breathFilter.Q.setValueAtTime(0.55, now);
+          const breathEnvelope = context.createGain();
+          breathEnvelope.gain.setValueAtTime(0.0001, now);
+          breathEnvelope.gain.exponentialRampToValueAtTime(0.012, now + 0.48);
+          breathEnvelope.gain.exponentialRampToValueAtTime(0.0001, now + 1.25);
+          breath.connect(breathFilter);
+          breathFilter.connect(breathEnvelope);
+          breathEnvelope.connect(master);
+          breath.start(now);
+          breath.stop(now + 1.3);
+
           [
             { start: 0, from: 369.99, to: 415.3, level: 0.065, detune: -4 },
             { start: 0.025, from: 369.99, to: 415.3, level: 0.065, detune: 4 },
