@@ -14,9 +14,13 @@ function databaseFailure(error: unknown) {
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     checkOrigin(request);
-    const session = await requireSession("admin");
+    const session = await requireSession();
     const body = await readJsonObject(request);
     onlyFields(body, ["title", "description", "dueDate", "dueTime", "status"]);
+    // Members may move a task between columns (status only); everything else is admin-only.
+    if (session.role !== "admin" && Object.keys(body).some((key) => key !== "status")) {
+      throw new HttpError(403, "FORBIDDEN", "Admin access is required to edit task details.");
+    }
     if (!Object.keys(body).length || (body.title !== undefined && typeof body.title !== "string") ||
         (body.description !== undefined && typeof body.description !== "string") ||
         (body.dueDate !== undefined && body.dueDate !== null && typeof body.dueDate !== "string") ||

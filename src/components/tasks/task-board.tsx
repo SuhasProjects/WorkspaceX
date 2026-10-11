@@ -13,6 +13,8 @@ interface TaskBoardProps {
   canEdit: boolean;
   /** Members can add tasks even though only admins can edit or delete them. */
   canCreate: boolean;
+  /** Everyone can move tasks between columns and mark them done. */
+  canMove: boolean;
   busy: boolean;
   message: string;
   onCreate: (title: string, description: string, dueDate: string, dueTime: string) => Promise<boolean>;
@@ -21,7 +23,9 @@ interface TaskBoardProps {
   onDelete: (id: string) => void;
 }
 
-export function TaskBoard({ tasks, canEdit, canCreate, busy, message, onCreate, onUpdate, onStatus, onDelete }: TaskBoardProps) {
+export function TaskBoard({ tasks, canEdit, canCreate, canMove, busy, message, onCreate, onUpdate, onStatus, onDelete }: TaskBoardProps) {
+  const [draggingTask, setDraggingTask] = useState<string | null>(null);
+  const [dropColumn, setDropColumn] = useState<TaskStatus | null>(null);
   const [creating, setCreating] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
@@ -61,8 +65,11 @@ export function TaskBoard({ tasks, canEdit, canCreate, busy, message, onCreate, 
     {message && <p className="feedback error" role="alert">{message}</p>}
     <div className="task-columns">{columns.map(({ status, title: columnTitle }) => {
       const items = tasks.filter((task) => task.status === status);
-      return <section key={status} className={`task-column ${status}`} aria-label={columnTitle}><h3><span className="status-dot" />{columnTitle}<span className="column-count">{items.length}</span></h3>
-        <div className="task-list">{items.length ? items.map((task) => <TaskCard key={task.id} task={task} canEdit={canEdit} busy={busy} onUpdate={onUpdate} onStatus={onStatus} onDelete={onDelete} />) : <p className="empty-column">Nothing here yet.</p>}</div>
+      return <section key={status} className={`task-column ${status}${dropColumn === status ? " is-drop-target" : ""}`} aria-label={columnTitle}
+        onDragOver={(event) => { if (!draggingTask) return; event.preventDefault(); event.dataTransfer.dropEffect = "move"; if (dropColumn !== status) setDropColumn(status); }}
+        onDragLeave={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setDropColumn(null); }}
+        onDrop={(event) => { event.preventDefault(); const id = draggingTask; setDraggingTask(null); setDropColumn(null); if (id && tasks.find((task) => task.id === id)?.status !== status) onStatus(id, status); }}><h3><span className="status-dot" />{columnTitle}<span className="column-count">{items.length}</span></h3>
+        <div className="task-list">{items.length ? items.map((task) => <TaskCard key={task.id} task={task} canEdit={canEdit} canMove={canMove} busy={busy} dragging={draggingTask === task.id} onDragStart={() => setDraggingTask(task.id)} onDragEnd={() => { setDraggingTask(null); setDropColumn(null); }} onUpdate={onUpdate} onStatus={onStatus} onDelete={onDelete} />) : <p className="empty-column">Nothing here yet.</p>}</div>
       </section>;
     })}</div>
   </section>;
@@ -71,13 +78,17 @@ export function TaskBoard({ tasks, canEdit, canCreate, busy, message, onCreate, 
 interface TaskCardProps {
   task: Task;
   canEdit: boolean;
+  canMove: boolean;
   busy: boolean;
+  dragging: boolean;
+  onDragStart: () => void;
+  onDragEnd: () => void;
   onUpdate: (id: string, updates: UpdateTaskRequest) => Promise<boolean>;
   onStatus: (id: string, status: TaskStatus) => void;
   onDelete: (id: string) => void;
 }
 
-function TaskCard({ task, canEdit, busy, onUpdate, onStatus, onDelete }: TaskCardProps) {
+function TaskCard({ task, canEdit, canMove, busy, dragging, onDragStart, onDragEnd, onUpdate, onStatus, onDelete }: TaskCardProps) {
   const [editing, setEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(task.title);
   const [editDescription, setEditDescription] = useState(task.description ?? "");
@@ -117,7 +128,7 @@ function TaskCard({ task, canEdit, busy, onUpdate, onStatus, onDelete }: TaskCar
     </article>;
   }
 
-  return <article className="task-card"><h4>{task.title}</h4>{task.description && <p>{task.description}</p>}{task.dueDate && <time className="task-due" dateTime={`${task.dueDate}${task.dueTime ? `T${task.dueTime}` : ""}`}>Due {formatDueDate(task.dueDate)}{task.dueTime ? ` at ${formatDueTime(task.dueTime)}` : ""}</time>}<div className="task-footer"><span className="task-avatar">WZ</span>{canEdit ? <span className="task-actions"><select value={task.status} disabled={busy} onChange={(event) => onStatus(task.id, event.target.value as TaskStatus)} aria-label={`Status for ${task.title}`}><option value="todo">To do</option><option value="in_progress">In progress</option><option value="done">Done</option></select><button type="button" disabled={busy} onClick={() => setEditing(true)} aria-label={`Edit ${task.title}`}>Edit</button><button type="button" disabled={busy} onClick={() => onDelete(task.id)} aria-label={`Delete ${task.title}`}>Delete</button></span> : <span>{task.status === "done" ? <><Icon name="check" size={13} />Complete</> : "Team task"}</span>}</div></article>;
+  return <article className={`task-card${dragging ? " is-dragging" : ""}`} draggable={canMove && !busy} onDragStart={(event) => { event.dataTransfer.effectAllowed = "move"; event.dataTransfer.setData("text/plain", task.id); onDragStart(); }} onDragEnd={onDragEnd} title={canMove ? "Drag to another column" : undefined}><h4>{task.title}</h4>{task.description && <p>{task.description}</p>}{task.dueDate && <time className="task-due" dateTime={`${task.dueDate}${task.dueTime ? `T${task.dueTime}` : ""}`}>Due {formatDueDate(task.dueDate)}{task.dueTime ? ` at ${formatDueTime(task.dueTime)}` : ""}</time>}<div className="task-footer"><span className="task-avatar">WZ</span>{canEdit ? <span className="task-actions"><select value={task.status} disabled={busy} onChange={(event) => onStatus(task.id, event.target.value as TaskStatus)} aria-label={`Status for ${task.title}`}><option value="todo">To do</option><option value="in_progress">In progress</option><option value="done">Done</option></select><button type="button" disabled={busy} onClick={() => setEditing(true)} aria-label={`Edit ${task.title}`}>Edit</button><button type="button" disabled={busy} onClick={() => onDelete(task.id)} aria-label={`Delete ${task.title}`}>Delete</button></span> : canMove ? <span className="task-actions"><select value={task.status} disabled={busy} onChange={(event) => onStatus(task.id, event.target.value as TaskStatus)} aria-label={`Status for ${task.title}`}><option value="todo">To do</option><option value="in_progress">In progress</option><option value="done">Done</option></select></span> : <span>{task.status === "done" ? <><Icon name="check" size={13} />Complete</> : "Team task"}</span>}</div></article>;
 }
 
 function formatDueDate(value: string) {
