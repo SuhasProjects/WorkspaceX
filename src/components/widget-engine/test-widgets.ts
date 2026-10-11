@@ -9,40 +9,63 @@ export const TEST_WIDGETS: TestWidget[] = [
   {
     id: "test-poll",
     title: "Team poll (shared storage)",
-    html: `<h3 style="margin-top:0">Which project should we prioritize?</h3>
+    html: `<!DOCTYPE html><html><head><title>Project Priority Poll</title><style>
+  h3{margin:0 0 12px} .opt{display:flex;align-items:center;gap:10px;margin:8px 0}
+  .bar{flex:1;height:10px;background:var(--wz-surface);border:1px solid var(--wz-border);border-radius:5px;overflow:hidden}
+  .fill{height:100%;background:var(--wz-accent);transition:width .3s}
+  .n{min-width:3ch;text-align:right;color:var(--wz-muted)} .mine{font-weight:600;color:var(--wz-success)}
+  .link{background:none;border:none;color:var(--wz-accent);padding:0;text-decoration:underline}
+</style></head><body>
+<h3>Which project should we prioritize?</h3>
 <div id="opts"></div><p id="msg" style="color:var(--wz-muted)">Loading votes…</p>
 <script>
   const OPTIONS = ["Mobile app", "Billing revamp", "Onboarding"];
-  let votes = {};
+  let votes = {}, mine = null;
+  const msg = (t) => { document.getElementById("msg").textContent = t; };
   function render() {
     const total = OPTIONS.reduce((s, o) => s + (votes[o] || 0), 0);
-    document.getElementById("opts").innerHTML = "";
+    const box = document.getElementById("opts");
+    box.innerHTML = "";
     for (const o of OPTIONS) {
-      const row = document.createElement("div");
-      row.style.margin = "8px 0";
+      const n = votes[o] || 0, row = document.createElement("div");
+      row.className = "opt";
       const b = document.createElement("button");
-      b.type = "button";
-      b.textContent = "Vote: " + o + " (" + (votes[o] || 0) + ")";
-      b.onclick = () => vote(o);
-      row.appendChild(b);
-      document.getElementById("opts").appendChild(row);
+      b.type = "button"; b.textContent = o; b.disabled = mine !== null; b.onclick = () => vote(o);
+      const bar = document.createElement("div"); bar.className = "bar";
+      const fill = document.createElement("div"); fill.className = "fill";
+      fill.style.width = (total ? (n / total) * 100 : 0) + "%"; bar.appendChild(fill);
+      const count = document.createElement("span"); count.className = "n" + (o === mine ? " mine" : ""); count.textContent = n;
+      row.append(b, bar, count); box.appendChild(row);
     }
-    document.getElementById("msg").textContent = total + " total votes";
+    if (mine === null) { msg(total + " votes so far. Pick one."); return; }
+    const p = document.getElementById("msg"); p.textContent = total + " votes. You voted for " + mine + ". ";
+    const change = document.createElement("button"); change.type = "button"; change.className = "link";
+    change.textContent = "Change my vote"; change.onclick = changeVote; p.appendChild(change);
   }
   async function vote(option) {
     try {
       votes = (await workspace.getShared("votes")) || {};
       votes[option] = (votes[option] || 0) + 1;
       await workspace.setShared("votes", votes);
+      mine = option;
+      await workspace.setPersonal("myVote", option);
       render();
-    } catch (e) {
-      document.getElementById("msg").textContent = "Could not save vote: " + e.message;
-    }
+    } catch (e) { msg("Could not save vote: " + e.message); }
   }
-  workspace.getShared("votes")
-    .then((v) => { votes = v || {}; render(); })
-    .catch((e) => { document.getElementById("msg").textContent = "Could not load votes: " + e.message; });
-</script>`,
+  async function changeVote() {
+    try {
+      votes = (await workspace.getShared("votes")) || {};
+      if (votes[mine] > 0) votes[mine] -= 1;
+      await workspace.setShared("votes", votes);
+      mine = null;
+      await workspace.setPersonal("myVote", null);
+      render();
+    } catch (e) { msg("Could not change vote: " + e.message); }
+  }
+  Promise.all([workspace.getShared("votes"), workspace.getPersonal("myVote")])
+    .then(([v, m]) => { votes = v || {}; mine = m || null; render(); })
+    .catch((e) => msg("Could not load votes: " + e.message));
+</script></body></html>`,
   },
   {
     id: "test-notes",
