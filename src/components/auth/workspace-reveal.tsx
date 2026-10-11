@@ -30,24 +30,26 @@ export function prepareWorkspaceRevealSound(): WorkspaceRevealSound {
           const now = context.currentTime;
           const warmth = context.createBiquadFilter();
           warmth.type = "lowpass";
-          warmth.frequency.setValueAtTime(1050, now);
-          warmth.frequency.exponentialRampToValueAtTime(1750, now + 0.9);
-          warmth.frequency.setValueAtTime(1750, now + 1.2);
+          warmth.frequency.setValueAtTime(2200, now);
+          warmth.frequency.exponentialRampToValueAtTime(3600, now + 0.85);
+          warmth.frequency.setValueAtTime(3600, now + 1.05);
           const master = context.createGain();
           master.gain.setValueAtTime(0.0001, now);
-          master.gain.exponentialRampToValueAtTime(0.46, now + 0.45);
-          master.gain.setValueAtTime(0.46, now + 1.1);
-          master.gain.exponentialRampToValueAtTime(0.0001, now + 1.9);
+          master.gain.exponentialRampToValueAtTime(0.3, now + 0.5);
+          master.gain.setValueAtTime(0.3, now + 0.95);
+          master.gain.exponentialRampToValueAtTime(0.0001, now + 1.65);
           master.connect(context.destination);
           warmth.connect(master);
 
           [
-            { start: 0, from: 146.83, to: 164.81, level: 0.13, detune: -5 },
-            { start: 0.025, from: 146.83, to: 164.81, level: 0.13, detune: 5 },
-            { start: 0.04, from: 183.54, to: 206.77, level: 0.085, detune: -4 },
-            { start: 0.065, from: 183.54, to: 206.77, level: 0.085, detune: 4 },
-            { start: 0.08, from: 220.25, to: 246.94, level: 0.05, detune: -3 },
-            { start: 0.105, from: 220.25, to: 246.94, level: 0.05, detune: 3 },
+            { start: 0, from: 293.66, to: 329.63, level: 0.075, detune: -4 },
+            { start: 0.025, from: 293.66, to: 329.63, level: 0.075, detune: 4 },
+            { start: 0.04, from: 369.99, to: 415.3, level: 0.055, detune: -3 },
+            { start: 0.065, from: 369.99, to: 415.3, level: 0.055, detune: 3 },
+            { start: 0.08, from: 440, to: 493.88, level: 0.035, detune: -2 },
+            { start: 0.105, from: 440, to: 493.88, level: 0.035, detune: 2 },
+            { start: 0.13, from: 587.33, to: 659.25, level: 0.018, detune: -1.5 },
+            { start: 0.155, from: 587.33, to: 659.25, level: 0.018, detune: 1.5 },
           ].forEach(({ start, from, to, level, detune }) => {
             const oscillator = context.createOscillator();
             const envelope = context.createGain();
@@ -58,15 +60,15 @@ export function prepareWorkspaceRevealSound(): WorkspaceRevealSound {
             oscillator.frequency.exponentialRampToValueAtTime(to, beginning + 0.9);
             envelope.gain.setValueAtTime(0.0001, beginning);
             envelope.gain.exponentialRampToValueAtTime(level, beginning + 0.42);
-            envelope.gain.setValueAtTime(level, now + 1.15);
-            envelope.gain.exponentialRampToValueAtTime(0.0001, now + 1.85);
+            envelope.gain.setValueAtTime(level, now + 1.05);
+            envelope.gain.exponentialRampToValueAtTime(0.0001, now + 1.6);
             oscillator.connect(envelope);
             envelope.connect(warmth);
             oscillator.start(beginning);
-            oscillator.stop(now + 1.9);
+            oscillator.stop(now + 1.65);
           });
 
-          window.setTimeout(cancel, 2200);
+          window.setTimeout(cancel, 1900);
         }).catch(() => undefined);
       },
       cancel,
