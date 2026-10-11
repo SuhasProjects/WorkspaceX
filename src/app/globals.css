@@ -104,9 +104,10 @@ svg { flex-shrink: 0; }
 .brand { display: flex; align-items: center; font-size: 19px; font-weight: 600; letter-spacing: -.7px; white-space: nowrap; }
 .brand-mark { display: grid; place-items: center; width: 31px; height: 31px; border: 1px solid var(--wz-border); border-radius: 3px; margin-right: 10px; color: var(--wz-accent); background: var(--hover); }
 .brand-zero { color: var(--wz-muted); font-weight: 400; }
-.header-divider { display: none; }
-.workspace-name { display: flex; flex-direction: column; align-items: flex-start; gap: 1px; font-size: 12px; color: var(--wz-muted); }
-.workspace-name small { font-size: 9px; color: var(--wz-muted); }
+.header-identity { display: flex; align-items: center; gap: 18px; min-width: 0; }
+.header-identity .brand { flex-shrink: 0; }
+.header-identity .header-divider { display: block; flex-shrink: 0; width: 1px; height: 24px; background: var(--wz-border); }
+.header-identity .workspace-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 18px; font-weight: 300; color: var(--wz-muted); }
 .preview-label, .role-badge, .section-note, .count-badge { font-size: 10px; border: 1px solid var(--wz-border); border-radius: 3px; padding: 3px 9px; color: var(--wz-muted); font-weight: 500; white-space: nowrap; background: var(--hover); }
 .header-actions { margin-left: auto; display: flex; align-items: center; gap: 12px; }
 .icon-button { display: grid; place-items: center; width: 35px; height: 35px; border-radius: 50%; border: 1px solid transparent; color: var(--wz-muted); background: transparent; }
@@ -293,6 +294,16 @@ body { font-family: var(--wz-font-body); }
 .task-column h3 { font-size: 15px; letter-spacing: .025em; }
 .eyebrow, .ai-label { letter-spacing: .16em; }
 .header-inner { gap: 24px; }
+@media (max-width: 760px) {
+  .header-identity { gap: 12px; }
+  .header-identity .workspace-name { font-size: 16px; }
+}
+@media (max-width: 600px) {
+  .header-identity { flex: 1 1 100%; gap: 10px; }
+  .header-identity .brand { font-size: 18px; }
+  .header-identity .workspace-name { order: initial; flex-basis: auto; font-size: 16px; }
+  .header-identity .header-divider { height: 20px; }
+}
 .section-heading { margin-bottom: 24px; }
 .builder { background: var(--glass); grid-template-columns: minmax(0, .55fr) minmax(0, 1.45fr); grid-template-rows: auto auto 1fr auto auto; column-gap: 22px; align-items: start; }
 .builder-description { max-width: 32ch; }
