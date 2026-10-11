@@ -2,6 +2,7 @@ import { randomBytes } from "node:crypto";
 import { hash } from "bcryptjs";
 import { checkOrigin, failure, HttpError, onlyFields, readJsonObject, success } from "@/lib/auth/http";
 import { setSession } from "@/lib/auth/session";
+import { trySetMonetizationSessionCookies } from "@/lib/billing/monetization-session";
 import { BCRYPT_COST, checkedPassword, checkedUsername } from "@/lib/auth/usernames";
 import { clientKey, enforceRateLimit } from "@/lib/auth/rate-limit";
 import { createUser, createWorkspace, publicAccount, setLastWorkspace } from "@/lib/db/accounts";
@@ -29,6 +30,7 @@ export async function POST(request: Request) {
     const workspace = await createWorkspace({ id: workspaceSlug(workspaceName), name: workspaceName, ownerUserId: user._id });
     await setLastWorkspace(user._id, workspace.id);
     await setSession({ userId: user._id, activeWorkspaceId: workspace.id });
+    await trySetMonetizationSessionCookies(user._id, request);
     return success({ account: publicAccount(user), workspace }, 201);
   } catch (error) {
     if (error instanceof DatabaseError && error.code === "CONFLICT") return failure(new HttpError(409, "CONFLICT", error.message));

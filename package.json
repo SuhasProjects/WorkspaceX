@@ -19,7 +19,10 @@
     "node": ">=24 <25"
   },
   "dependencies": {
+    "@aws-app-monetization/monetize-skill": "^0.1.1791678431",
+    "@aws-app-monetization/sdk": "^0.1.1791657605",
     "bcryptjs": "^3.0.3",
+    "dotenv": "^18.0.7",
     "jose": "^6.2.12",
     "mongodb": "^7.7.0",
     "next": "16.4.0",

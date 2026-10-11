@@ -5,6 +5,7 @@ import Link from "next/link";
 import type { Account, Workspace } from "@/types/contracts";
 import { ROLE_LABEL } from "@/lib/auth/roles";
 import { planDefinition } from "@/lib/billing/plans";
+import { ManagePlanButton, ManageSubscriptionButton } from "@/components/billing/hosted-launchers";
 import { Icon } from "./icon";
 
 export type DashboardPanel = "members" | "invitations";
@@ -81,6 +82,8 @@ export function AccountMenu({ account, workspace, workspaces, invitationCount, o
       <div className="account-menu-section">
         <button type="button" role="menuitem" className="account-menu-action" onClick={() => { setOpen(false); onOpenPanel("members"); }}><Icon name="people" size={14} />Members of {workspace.name}</button>
         <button type="button" role="menuitem" className="account-menu-action" onClick={() => { setOpen(false); onOpenPanel("invitations"); }}><Icon name="sparkle" size={14} />Invitations{invitationCount > 0 && <span className="account-menu-badge">{invitationCount}</span>}</button>
+        <ManagePlanButton className="account-menu-action" onNavigate={() => setOpen(false)}><Icon name="sparkle" size={14} />Plans and pricing</ManagePlanButton>
+        <ManageSubscriptionButton className="account-menu-action" onNavigate={() => setOpen(false)}><Icon name="arrow" size={14} />Manage subscription</ManageSubscriptionButton>
         <button type="button" role="menuitem" className="account-menu-action" onClick={onLogout}><Icon name="logout" size={14} />Log out</button>
       </div>
       {error && <p className="feedback error" role="alert">{error}</p>}

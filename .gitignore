@@ -34,6 +34,7 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 !.env.example
+!.env.monetization
 
 # vercel
 .vercel
@@ -41,3 +42,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# AWS Monetization skill state and registry token
+.monetize/
+.npmrc

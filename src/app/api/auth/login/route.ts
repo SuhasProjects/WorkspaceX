@@ -1,6 +1,7 @@
 import { compare, hash } from "bcryptjs";
 import { checkOrigin, failure, HttpError, onlyFields, readJsonObject, success } from "@/lib/auth/http";
 import { setSession } from "@/lib/auth/session";
+import { trySetMonetizationSessionCookies } from "@/lib/billing/monetization-session";
 import { BCRYPT_COST } from "@/lib/auth/usernames";
 import { clearRateLimit, clientKey, enforceRateLimit } from "@/lib/auth/rate-limit";
 import { getUserByUsername, getWorkspaceForUser, listWorkspacesForUser, publicAccount } from "@/lib/db/accounts";
@@ -30,6 +31,7 @@ export async function POST(request: Request) {
     const remembered = user.lastWorkspaceId ? await getWorkspaceForUser(user.lastWorkspaceId, user._id) : null;
     const workspace = remembered ?? (await listWorkspacesForUser(user._id))[0] ?? null;
     await setSession({ userId: user._id, activeWorkspaceId: workspace?.id });
+    await trySetMonetizationSessionCookies(user._id, request);
     return success({ account: publicAccount(user), workspace });
   } catch (error) { return failure(error); }
 }

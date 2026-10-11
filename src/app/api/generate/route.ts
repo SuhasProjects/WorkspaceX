@@ -4,6 +4,7 @@ import { getWidget, listWidgets } from "@/lib/db/repository";
 import { getGenerationCount, getWorkspacePlan, recordGeneration } from "@/lib/db/accounts";
 import { generationLimitFor } from "@/lib/billing/plans";
 import { generateWidget, GenerationError } from "@/lib/luminal/generate";
+import { AI_GENERATION_EVENT, getMonetize, monetizationEnforced } from "@/lib/billing/aws-monetize";
 
 export const runtime = "nodejs";
 export async function POST(request: Request) {
@@ -38,8 +39,28 @@ export async function POST(request: Request) {
     if (used >= limit) {
       throw new HttpError(403, "GENERATION_LIMIT_REACHED", `The ${plan} plan allows ${limit} AI generations per month. Upgrade for more.`);
     }
+    // AWS Monetization entitlement, checked before any paid work. Billing follows the workspace
+    // owner, like the quota above. A service outage fails open (the request is served); a DENY
+    // decision, including NO_SUBSCRIPTION, still blocks.
+    if (monetizationEnforced()) {
+      try {
+        const entitlement = await getMonetize().checkEntitlement(ownerUserId, { eventType: AI_GENERATION_EVENT });
+        if (entitlement.decision === "DENY") {
+          throw new HttpError(403, "NOT_ENTITLED", "Your plan does not include more AI generations. Upgrade to continue.");
+        }
+      } catch (error) {
+        if (error instanceof HttpError) throw error;
+        console.error("Entitlement check failed; allowing the request", error instanceof Error ? error.message : error);
+      }
+    }
     const generated = await generateWidget(body.prompt, body.baseHtml, references);
     await recordGeneration(ownerUserId);
+    // Usage metering is best effort: the generation already succeeded and must not fail on billing.
+    try {
+      await getMonetize().putEvent(ownerUserId, { eventType: AI_GENERATION_EVENT });
+    } catch (error) {
+      console.error("Could not record AI generation usage", error instanceof Error ? error.message : error);
+    }
     return success(generated);
   } catch (error) {
     if (error instanceof GenerationError) {
