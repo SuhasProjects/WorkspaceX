@@ -1,7 +1,7 @@
 # WorkspaceZero
 
 One Next.js application for AI-generated mini-apps in shared team workspaces.
-This commit is the shared foundation, not the completed product.
+The application includes authenticated workspace, task, widget, generation, and shared-storage APIs connected to the dashboard. Deployment remains in progress.
 
 ## Local development
 
@@ -33,8 +33,7 @@ npm start
 Backend owns initialization, backend routes, shared contracts, dependencies,
 and deployment. Frontend owns dashboard/access screens and styling. Widget
 Engine owns iframe execution and the storage bridge. Review the contracts before
-parallel implementation. All business endpoints in the contract are planned;
-only `/api/health` currently exists.
+parallel implementation. Core workspace, auth, task, widget, generation, and storage endpoints now exist.
 
 ## Dependencies
 
@@ -54,6 +53,4 @@ Next's lint configuration to an incompatible major. Do not apply it blindly.
 Track a compatible upstream patch; rerun `npm audit` when updating dependencies.
 These entries do not establish that production dependencies are vulnerable.
 
-MongoDB connectivity, Luminal generation, authentication, dashboard, iframe
-isolation, storage persistence, and Vercel deployment have not been implemented
-or verified by the foundation milestone.
+MongoDB persistence, authentication, shared-storage, and Luminal generation passed focused live checks. Dashboard integration is complete; Vercel deployment remains pending.

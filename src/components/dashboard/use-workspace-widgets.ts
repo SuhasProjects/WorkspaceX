@@ -6,13 +6,18 @@ import { mockWorkspace, readPreviewWidgets } from "./mock-data";
 
 type WorkspaceState =
   | { status: "loading" }
+  | { status: "signed_out" }
   | { status: "ready"; workspace: Workspace; widgets: Widget[] }
   | { status: "error"; message: string };
 
+class RequestError extends Error {
+  constructor(public readonly status: number, message: string) { super(message); }
+}
+
 async function request<T>(url: string, signal: AbortSignal): Promise<T> {
   const response = await fetch(url, { signal, cache: "no-store", credentials: "same-origin" });
-  if (response.status === 401) throw new Error("Sign in to your workspace to open its saved tools.");
-  if (response.status === 403) throw new Error("Your session doesn't have access to these tools.");
+  if (response.status === 401) throw new RequestError(401, "Sign in to your workspace to open its saved tools.");
+  if (response.status === 403) throw new RequestError(403, "Your session doesn't have access to these tools.");
   if (!response.ok) throw new Error("We couldn't load the workspace tools. Please try again.");
   const result: ApiResponse<T> = await response.json();
   if (result.error || !result.data) throw new Error("We couldn't load the workspace tools. Please try again.");
@@ -36,7 +41,10 @@ export function useWorkspaceWidgets(preview = false) {
       if (!workspaceData.workspace?.id || !Array.isArray(widgetData.widgets)) throw new Error("The workspace response isn't ready. Please try again.");
       if (!controller.signal.aborted) setState({ status: "ready", workspace: workspaceData.workspace, widgets: widgetData.widgets });
     }).catch((error: unknown) => {
-      if (!controller.signal.aborted) setState({ status: "error", message: error instanceof Error ? error.message : "We couldn't load your tools." });
+      if (!controller.signal.aborted) {
+        if (error instanceof RequestError && error.status === 401) setState({ status: "signed_out" });
+        else setState({ status: "error", message: error instanceof Error ? error.message : "We couldn't load your tools." });
+      }
     });
     return () => controller.abort();
   }, [revision, preview]);
