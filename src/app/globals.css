@@ -205,3 +205,40 @@ h1, h2, h3, h4, p { margin: 0; }
 .builder-preview-frame { min-height: 280px; border: 1px solid var(--wz-border); border-radius: 8px; background: var(--wz-surface); }
 .preview-actions { display: grid; grid-template-columns: 1fr 1.5fr; gap: 8px; margin-top: 10px; }
 .preview-actions > button:first-child { border: 1px solid var(--wz-border); border-radius: 7px; background: transparent; color: var(--wz-text); }
+
+/* ---- Dark theme: full-page overrides for hard-coded light colors ---- */
+[data-theme="dark"] {
+  --background: #171820; --foreground: #eeedf4; --wz-background: #171820;
+  --wz-tint: #2a2740; --wz-tint-strong: #3a3457; --wz-elevated: #262735;
+  color-scheme: dark;
+}
+body:has([data-theme="dark"]) { background: #171820; color: #eeedf4; }
+[data-theme="dark"] .preview-label, [data-theme="dark"] .count-badge, [data-theme="dark"] .builder-note,
+[data-theme="dark"] .access-tabs, [data-theme="dark"] .calculator-inputs > div, [data-theme="dark"] .widget-footer,
+[data-theme="dark"] .task-column { background: var(--wz-elevated); border-color: var(--wz-border); color: var(--wz-muted); }
+[data-theme="dark"] .task-card, [data-theme="dark"] .examples button, [data-theme="dark"] .poll-option,
+[data-theme="dark"] .access-tabs button[aria-selected="true"], [data-theme="dark"] .section-note,
+[data-theme="dark"] .sample-pill { background: var(--wz-surface); border-color: var(--wz-border); color: var(--wz-text); box-shadow: none; }
+[data-theme="dark"] .role-badge, [data-theme="dark"] .avatar, [data-theme="dark"] .task-avatar, [data-theme="dark"] .tool-icon,
+[data-theme="dark"] .builder-icon, [data-theme="dark"] .calendar-controls button, [data-theme="dark"] .poll-fill,
+[data-theme="dark"] .widget-page-links a[aria-current="page"] { background: var(--wz-tint); border-color: var(--wz-tint-strong); color: #c4b8f2; }
+[data-theme="dark"] .tool-directory a:hover, [data-theme="dark"] .widget-page-links a:hover,
+[data-theme="dark"] .examples button:not(:disabled):hover { background: var(--wz-tint); border-color: var(--wz-tint-strong); }
+[data-theme="dark"] .builder { background: linear-gradient(145deg, #23203a 0%, var(--wz-surface) 46%); border-color: var(--wz-tint-strong); }
+[data-theme="dark"] .builder textarea { background: var(--wz-elevated); border-color: var(--wz-border); color: var(--wz-text); }
+[data-theme="dark"] .builder textarea::placeholder, [data-theme="dark"] .prompt-meta, [data-theme="dark"] .examples h3,
+[data-theme="dark"] .builder-description, [data-theme="dark"] .ai-label, [data-theme="dark"] .builder-note p,
+[data-theme="dark"] .eyebrow, [data-theme="dark"] .intro-tag, [data-theme="dark"] .icon-button, [data-theme="dark"] .column-count,
+[data-theme="dark"] .task-card p, [data-theme="dark"] .task-footer, [data-theme="dark"] .sample-question, [data-theme="dark"] .sample-caption,
+[data-theme="dark"] .calculator-inputs span, [data-theme="dark"] .calculator-result > span, [data-theme="dark"] .poll-label > span:last-child,
+[data-theme="dark"] .examples button > svg:last-child, [data-theme="dark"] .placeholder-icon { color: var(--wz-muted); }
+[data-theme="dark"] .builder-note strong, [data-theme="dark"] .calculator-result > strong { color: var(--wz-text); }
+[data-theme="dark"] .calculator-result strong > span { color: #a89acb; }
+[data-theme="dark"] .examples, [data-theme="dark"] .widget-heading { border-color: var(--wz-border); }
+[data-theme="dark"] .generate-button:disabled { background: #4a4270; color: #b0adbf; }
+[data-theme="dark"] .feedback.error { background: #3a2026; color: #ff8a97; }
+[data-theme="dark"] .feedback.success { background: #1f3328; color: #7fd4a6; }
+[data-theme="dark"] .page-state .spinner { border-color: var(--wz-tint-strong); border-top-color: var(--wz-accent); }
+[data-theme="dark"] .access-shell { background: linear-gradient(145deg, #1d1b2e, #171820); }
+[data-theme="dark"] .access-shell input, [data-theme="dark"] input, [data-theme="dark"] select,
+[data-theme="dark"] textarea { background: var(--wz-elevated); color: var(--wz-text); border-color: var(--wz-border); }
