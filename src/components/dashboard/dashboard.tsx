@@ -143,7 +143,7 @@ export function Dashboard() {
         {workspace.role === "admin" && <a href="#tool-prompt" className="workspace-tab-action"><Icon name="plus" size={14} />New tool</a>}
       </section>
       {activeWidget ? <section className="tool-pane" aria-label={activeWidget.title}>
-        {workspace.role === "admin" && <ToolManageBar widget={activeWidget} position={widgets.findIndex((widget) => widget.id === activeWidget.id)} count={widgets.length} onMove={moveWidget} onDelete={removeWidget} onDeleted={() => setActiveTool(null)} />}
+        {workspace.role === "admin" && <ToolManageBar widget={activeWidget} onDelete={removeWidget} onDeleted={() => setActiveTool(null)} />}
         <WidgetRenderer key={`${workspace.id}:${activeWidget.id}`} widgetId={activeWidget.id} workspaceId={workspace.id} html={activeWidget.html} theme={theme} title={activeWidget.title} className="tool-pane-frame" />
       </section> : <div className="dashboard-grid"><div className="workspace-content"><div className="overview-grid"><Calendar tasks={tasks} selectedDueDate={selectedDueDate} onSelectDueDate={setSelectedDueDate} /><TodoList tasks={tasks} canEdit={workspace.role === "admin" && !taskBusy} selectedDueDate={selectedDueDate} onClearDate={() => setSelectedDueDate(null)} onToggle={toggleTask} /></div><TaskBoard tasks={tasks} canEdit={workspace.role === "admin"} busy={taskBusy} message={taskMessage} onCreate={createTask} onStatus={(id, status) => void updateTaskStatus(id, status)} onDelete={(id) => void deleteTask(id)} />
       </div>{workspace.role === "admin" && <AIBuilderPanel isAdmin workspaceId={workspace.id} theme={theme} preview={preview} onGenerate={generate} onSave={save} onDiscard={() => setPreview(null)} />}</div>}
