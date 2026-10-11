@@ -7,7 +7,7 @@ async function main() {
   loadEnvConfig(process.cwd());
   verificationStage = "import database modules";
   const { getDatabase, closeDatabase, DatabaseError } = await import("../src/lib/db/client");
-  const { createWorkspace, getWorkspace, createWidget, getWidget, listWidgets, deleteWidget } = await import("../src/lib/db/repository");
+  const { createWorkspace, getWorkspace, createTask, listTasks, updateTask, deleteTask, createWidget, getWidget, listWidgets, deleteWidget } = await import("../src/lib/db/repository");
   const workspaceId = `verify-${randomUUID()}`;
   const otherWorkspaceId = `verify-${randomUUID()}`;
   let created = false;
@@ -23,6 +23,14 @@ async function main() {
     created = true;
     assert.deepEqual(await getWorkspace(workspaceId), { id: workspaceId, name: "Persistence verification" });
     await assert.rejects(() => createWorkspace({ id: workspaceId, name: "Duplicate", adminPasswordHash: fixtureHash(), memberPasswordHash: fixtureHash() }), (error: unknown) => error instanceof DatabaseError && error.code === "CONFLICT");
+    const task = await createTask(workspaceId, { title: "Verify task persistence", description: "Stored in MongoDB" });
+    assert.deepEqual(await listTasks(workspaceId), [task]);
+    const updatedTask = await updateTask(workspaceId, task.id, { status: "done" });
+    assert.equal(updatedTask?.status, "done");
+    assert.equal(await deleteTask(otherWorkspaceId, task.id), false);
+    assert.equal(await deleteTask(workspaceId, task.id), true);
+    assert.deepEqual(await listTasks(workspaceId), []);
+    console.log("PASS: task creation, updates, deletion, and workspace isolation.");
     const widget = await createWidget(workspaceId, { title: "Verification", html: "<!DOCTYPE html><html><body>Verification</body></html>" });
     assert.deepEqual(await getWidget(workspaceId, widget.id), widget);
     assert.deepEqual(await listWidgets(workspaceId), [widget]);
@@ -42,6 +50,7 @@ async function main() {
       if (created) {
         verificationStage = "database connection";
     const db = await getDatabase();
+        await db.collection("tasks").deleteMany({ workspaceId });
         await db.collection("widgets").deleteMany({ workspaceId });
         await db.collection("widgetData").deleteMany({ workspaceId });
         await db.collection("workspaces").deleteOne({ _id: workspaceId } as never);

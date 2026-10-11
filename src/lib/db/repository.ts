@@ -1,7 +1,7 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
 import { MongoServerError } from "mongodb";
-import type { GeneratedWidget, JsonValue, Task, Widget } from "@/types/contracts";
+import type { GeneratedWidget, JsonValue, Task, TaskStatus, UpdateTaskRequest, Widget } from "@/types/contracts";
 import { DatabaseError, getDatabase } from "./client";
 
 interface WorkspaceRecord {
@@ -9,7 +9,6 @@ interface WorkspaceRecord {
   name: string;
   adminPasswordHash: string;
   memberPasswordHash: string;
-  tasks: Task[];
   createdAt: Date;
 }
 interface WidgetRecord {
@@ -24,6 +23,15 @@ interface WidgetDataRecord {
   widgetId: string;
   key: string;
   value: JsonValue;
+  updatedAt: Date;
+}
+interface TaskRecord {
+  _id: string;
+  workspaceId: string;
+  title: string;
+  description?: string;
+  status: TaskStatus;
+  createdAt: Date;
   updatedAt: Date;
 }
 export interface WorkspaceSummary { id: string; name: string }
@@ -47,6 +55,33 @@ function checkedTitle(title: string): string {
 function publicWidget(record: WidgetRecord): Widget {
   return { id: record._id, title: record.title, html: record.html, createdAt: record.createdAt.toISOString() };
 }
+function checkedDescription(description: string | undefined): string | undefined {
+  if (description === undefined) return undefined;
+  if (description.length > 2000) throw new DatabaseError("INVALID_INPUT", "Description must be at most 2,000 characters.");
+  return description;
+}
+function checkedStatus(status: string | undefined): TaskStatus {
+  if (status === undefined) return "todo";
+  if (status !== "todo" && status !== "in_progress" && status !== "done") {
+    throw new DatabaseError("INVALID_INPUT", "Invalid task status.");
+  }
+  return status;
+}
+function checkTaskId(id: string): void {
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)) {
+    throw new DatabaseError("INVALID_INPUT", "Invalid task ID.");
+  }
+}
+function publicTask(record: TaskRecord): Task {
+  return {
+    id: record._id,
+    title: record.title,
+    ...(record.description === undefined ? {} : { description: record.description }),
+    status: record.status,
+    createdAt: record.createdAt.toISOString(),
+    updatedAt: record.updatedAt.toISOString(),
+  };
+}
 
 /** Caller must hash passwords using the authentication library before insertion. */
 export async function createWorkspace(input: CreateWorkspaceRecord): Promise<WorkspaceSummary> {
@@ -61,7 +96,7 @@ export async function createWorkspace(input: CreateWorkspaceRecord): Promise<Wor
       _id: input.id, name,
       adminPasswordHash: input.adminPasswordHash,
       memberPasswordHash: input.memberPasswordHash,
-      tasks: [], createdAt: new Date(),
+      createdAt: new Date(),
     });
   } catch (error) {
     if (error instanceof MongoServerError && error.code === 11000) {
@@ -133,4 +168,55 @@ export async function deleteWidget(workspaceId: string, widgetId: string): Promi
   if (result.deletedCount === 0) return false;
   await db.collection<WidgetDataRecord>("widgetData").deleteMany({ workspaceId, widgetId });
   return true;
+}
+
+export async function listTasks(workspaceId: string): Promise<Task[]> {
+  checkWorkspaceId(workspaceId);
+  const db = await getDatabase();
+  const records = await db.collection<TaskRecord>("tasks").find({ workspaceId }).sort({ createdAt: 1, _id: 1 }).toArray();
+  return records.map(publicTask);
+}
+
+export async function createTask(
+  workspaceId: string,
+  input: { title: string; description?: string; status?: TaskStatus },
+): Promise<Task> {
+  checkWorkspaceId(workspaceId);
+  if (!(await getWorkspace(workspaceId))) throw new DatabaseError("NOT_FOUND", "Workspace not found.");
+  const now = new Date();
+  const record: TaskRecord = {
+    _id: randomUUID(),
+    workspaceId,
+    title: checkedTitle(input.title),
+    ...(input.description === undefined ? {} : { description: checkedDescription(input.description) }),
+    status: checkedStatus(input.status),
+    createdAt: now,
+    updatedAt: now,
+  };
+  const db = await getDatabase();
+  await db.collection<TaskRecord>("tasks").insertOne(record);
+  return publicTask(record);
+}
+
+export async function updateTask(workspaceId: string, taskId: string, input: UpdateTaskRequest): Promise<Task | null> {
+  checkWorkspaceId(workspaceId);
+  checkTaskId(taskId);
+  const changes: Partial<Pick<TaskRecord, "title" | "description" | "status">> & { updatedAt: Date } = { updatedAt: new Date() };
+  if (input.title !== undefined) changes.title = checkedTitle(input.title);
+  if (input.description !== undefined) changes.description = checkedDescription(input.description);
+  if (input.status !== undefined) changes.status = checkedStatus(input.status);
+  const db = await getDatabase();
+  const record = await db.collection<TaskRecord>("tasks").findOneAndUpdate(
+    { _id: taskId, workspaceId },
+    { $set: changes },
+    { returnDocument: "after" },
+  );
+  return record ? publicTask(record) : null;
+}
+
+export async function deleteTask(workspaceId: string, taskId: string): Promise<boolean> {
+  checkWorkspaceId(workspaceId);
+  checkTaskId(taskId);
+  const db = await getDatabase();
+  return (await db.collection<TaskRecord>("tasks").deleteOne({ _id: taskId, workspaceId })).deletedCount === 1;
 }
