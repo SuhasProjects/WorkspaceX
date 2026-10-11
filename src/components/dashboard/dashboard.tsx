@@ -36,6 +36,7 @@ export function Dashboard() {
   const [taskMessage, setTaskMessage] = useState("");
   const [selectedDueDate, setSelectedDueDate] = useState<string | null>(null);
   const [preview, setPreview] = useState<GeneratedWidget | null>(null);
+  const [builderOpen, setBuilderOpen] = useState(false);
   const theme = useWidgetTheme();
   const { state, retry, reorderWidget, removeWidget } = useWorkspaceWidgets();
   const [dragging, setDragging] = useState<string | null>(null);
@@ -140,13 +141,13 @@ export function Dashboard() {
             onDragEnd={() => { setDragging(null); setDropTarget(null); }}
             title={workspace.role === "admin" ? "Drag to reorder" : undefined}>{widget.title}</a>)}
         </nav>
-        {workspace.role === "admin" && <a href="#tool-prompt" className="workspace-tab-action"><Icon name="plus" size={14} />New tool</a>}
+        {workspace.role === "admin" && <a href="#tool-builder" className="workspace-tab-action" onClick={() => { setActiveTool(null); setBuilderOpen(true); }}><Icon name="plus" size={14} />New tool</a>}
       </section>
       {activeWidget ? <section className="tool-pane" aria-label={activeWidget.title}>
         {workspace.role === "admin" && <ToolManageBar widget={activeWidget} onDelete={removeWidget} onDeleted={() => setActiveTool(null)} />}
         <WidgetRenderer key={`${workspace.id}:${activeWidget.id}`} widgetId={activeWidget.id} workspaceId={workspace.id} html={activeWidget.html} theme={theme} title={activeWidget.title} className="tool-pane-frame" />
       </section> : <div className="dashboard-grid"><div className="workspace-content"><div className="overview-grid"><Calendar tasks={tasks} selectedDueDate={selectedDueDate} onSelectDueDate={setSelectedDueDate} /><TodoList tasks={tasks} canEdit={workspace.role === "admin" && !taskBusy} selectedDueDate={selectedDueDate} onClearDate={() => setSelectedDueDate(null)} onToggle={toggleTask} /></div><TaskBoard tasks={tasks} canEdit={workspace.role === "admin"} busy={taskBusy} message={taskMessage} onCreate={createTask} onStatus={(id, status) => void updateTaskStatus(id, status)} onDelete={(id) => void deleteTask(id)} />
-      </div>{workspace.role === "admin" && <AIBuilderPanel isAdmin workspaceId={workspace.id} theme={theme} preview={preview} onGenerate={generate} onSave={save} onDiscard={() => setPreview(null)} />}</div>}
+      </div>{workspace.role === "admin" && <AIBuilderPanel isAdmin expanded={builderOpen} onToggle={() => setBuilderOpen((current) => !current)} workspaceId={workspace.id} theme={theme} preview={preview} onGenerate={generate} onSave={save} onDiscard={() => setPreview(null)} />}</div>}
       <footer className="dashboard-footer"><span>WorkspaceZero · Small software. Shared workspace.</span><span>AI tools, shared with your team</span></footer>
     </main>
   </div>;
