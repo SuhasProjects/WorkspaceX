@@ -133,7 +133,7 @@ button, a, textarea, input, select { outline-offset: 4px; }
 svg { flex-shrink: 0; }
 .dashboard-shell { position: relative; isolation: isolate; min-height: 100vh; padding: 24px 32px 0; overflow: clip; }
 .atmosphere { position: absolute; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
-.atmosphere svg { position: absolute; top: -90px; right: -150px; width: max(240%, 2800px); height: 1100px; color: rgba(169, 184, 210, .22); opacity: .9; }
+.atmosphere svg { position: absolute; top: -90px; right: -150px; width: max(240%, 2800px); height: 1100px; color: rgba(169, 184, 210, .22); opacity: .9; filter: blur(2px); }
 .access-shell .atmosphere svg { top: 10px; }
 .atmosphere-track { transform-box: view-box; animation: atmosphere-drift 80s linear infinite; will-change: transform; }
 .atmosphere-breath { transform-box: view-box; transform-origin: center; animation: atmosphere-breath 36s ease-in-out infinite alternate; will-change: transform; }
